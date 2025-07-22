@@ -31,7 +31,6 @@ jobs:
                   coverage: "none"
                   php-version: ${{ inputs.php-version }}
 
-
             - name: "Install dependencies with Composer"
               uses: "ramsey/composer-install@v2"
               with:

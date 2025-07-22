@@ -1,0 +1,178 @@
+name: "Codeception tests"
+
+on:
+  workflow_call:
+    inputs:
+      APP_ENV:
+        required: true
+        type: string
+      OPENDXP_TEST:
+        required: true
+        type: string
+      PHP_VERSION:
+        required: true
+        type: string
+      DATABASE:
+        required: false
+        type: string
+        default: "mariadb:10.7"
+      SERVER_VERSION:
+        required: false
+        type: string
+      DEPENDENCIES:
+        required: true
+        type: string
+      EXPERIMENTAL:
+        required: true
+        type: string
+      OPENDXP_VERSION:
+        required: false
+        type: string
+      REQUIRE_ADMIN_BUNDLE:
+        required: false
+        type: string
+        default: "true"
+      OPENDXP_OPEN_SEARCH_HOST:
+        required: false
+        type: string
+        default: "39200"
+      OPENDXP_OPENSEARCH_VERSION:
+        required: false
+        type: string
+        default: "2"
+      COVERAGE:
+        required: false
+        type: string
+        default: "none"
+      CACHE_CLEAR:
+        required: false
+        type: string
+        default: "false"
+      GOTENBERG_DNS:
+        required: false
+        type: string
+        default: "http://127.0.0.1:31234"
+      REDIS_DSN:
+        required: false
+        type: string
+        default: "redis://127.0.0.1:63379"
+
+    secrets:
+      COMPOSER_OPENDXP_REPO_PACKAGIST_TOKEN:
+        required: false
+      SSH_PRIVATE_KEY_OPENDXP_DEPLOYMENTS_USER:
+        required: false
+      GOOGLE_CLIENT_ID:
+        required: false
+      GOOGLE_CLIENT_SECRET:
+        required: false
+      OPENDXP_INSTANCE_IDENTIFIER:
+        required: false
+      OPENDXP_ENCRYPTION_SECRET:
+        required: false
+      OPENDXP_PRODUCT_KEY:
+        required: false
+
+jobs:
+  codeception-tests:
+    name: "Codeception tests"
+    runs-on: "ubuntu-22.04"
+    continue-on-error: ${{ inputs.EXPERIMENTAL == 'true' }}
+    env:
+      SYMFONY_DEPRECATIONS_HELPER: "weak"
+      OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test"
+      OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.OPENDXP_OPEN_SEARCH_HOST }}"
+      OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
+      APP_ENV: ${{ inputs.APP_ENV }}
+      OPENDXP_TEST: ${{ inputs.OPENDXP_TEST }}
+      OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
+      OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_ENCRYPTION_SECRET }}
+      OPENDXP_TEST_REDIS_DSN: ${{inputs.REDIS_DSN}}
+      OPENDXP_TEST_GOTENBERG_DNS: ${{inputs.GOTENBERG_DNS}}
+    services:
+      mariadb:
+        image: "${{ inputs.DATABASE }}"
+        ports:
+          - 33006:3306
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+
+      opensearch:
+        image: opensearchproject/opensearch:${{ inputs.OPENDXP_OPENSEARCH_VERSION }}
+        ports:
+          - ${{ inputs.OPENDXP_OPEN_SEARCH_HOST }}:9200
+        env:
+          cluster.name: "opensearch-cluster"
+          node.name: "opensearch-node"
+          discovery.seed_hosts: "opensearch-node"
+          bootstrap.memory_lock: true
+          OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+          discovery.type: "single-node"
+          DISABLE_SECURITY_PLUGIN: true
+
+      gotenberg:
+        image: gotenberg/gotenberg:8
+        ports:
+          - 31234:3000
+
+      redis:
+        image: redis
+        ports:
+          - 63379:6379
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v4"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "${{ inputs.COVERAGE }}"
+          extensions: imagick
+          ini-values: display_errors=On, display_startup_errors=On, error_reporting=32767
+          php-version: "${{ inputs.PHP_VERSION }}"
+
+      - name: "Install Ghostscript and PDFInfo"
+        run: |
+          sudo apt-get update --allow-releaseinfo-change
+          sudo apt-get install -y ghostscript poppler-utils
+          
+      - name: Verify MariaDB connection
+        run: |
+          cp .github/ci/files/.my.cnf ~/.my.cnf
+          while ! mysqladmin ping --silent; do
+            sleep 1
+          done
+
+      - name: "Create Database"
+        run: |
+          mysql -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
+
+      - name: "Setup Pimcore environment"
+        env:
+          REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
+        run: |
+          chmod 755 .github/ci/scripts/setup-opendxp-environment.sh
+          .github/ci/scripts/setup-opendxp-environment.sh
+
+      - name: "Update OpenDXP version"
+        env:
+          OPENDXP_VERSION: "${{ inputs.OPENDXP_VERSION }}"
+          REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
+        run: |
+          if [ ! -z "$OPENDXP_VERSION" ]; then
+                composer require --no-update open-dxp/opendxp:"${OPENDXP_VERSION}"
+          fi
+
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v3"
+        with:
+          dependency-versions: "${{ inputs.DEPENDENCIES }}"
+      
+      - name: "Run cache clear"
+        if: ${{ inputs.CACHE_CLEAR == 'true' }}
+        run: |
+          ./bin/console cache:clear --no-interaction
+
+      - name: "Run Codeception"
+        run: "vendor/bin/codecept run -c . -vvv --xml"
