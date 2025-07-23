@@ -1,0 +1,106 @@
+name: "Static analysis"
+
+on:
+  workflow_call:
+    inputs:
+      APP_ENV:
+        required: true
+        type: string
+      OPENDXP_TEST:
+        required: true
+        type: string
+      PRIVATE_REPO:
+        required: true
+        type: string
+      PHP_VERSION:
+        required: true
+        type: string
+      SYMFONY:
+        required: false
+        type: string
+      DEPENDENCIES:
+        required: true
+        type: string
+      EXPERIMENTAL:
+        required: true
+        type: string
+      OPENDXP_VERSION:
+        required: false
+        type: string
+      REQUIRE_ADMIN_BUNDLE:
+        required: false
+        type: string
+        default: "true"
+      COVERAGE:
+        required: false
+        type: string
+        default: "none"
+      COMPOSER_OPTIONS:
+        required: false
+        type: string
+
+jobs:
+  static-analysis:
+    name: "Static analysis with phpstan"
+    runs-on: "ubuntu-latest"
+    continue-on-error: ${{ inputs.EXPERIMENTAL == 'true' }}
+    env:
+      OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
+      APP_ENV: ${{ inputs.APP_ENV }}
+      OPENDXP_TEST: ${{ inputs.OPENDXP_TEST }}
+      OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_CI_INSTANCE_IDENTIFIER }}
+      OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_CI_ENCRYPTION_SECRET }}
+      OPENDXP_PRODUCT_KEY: ${{ secrets.OPENDXP_CI_PRODUCT_KEY }}
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v4"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "${{ inputs.COVERAGE }}"
+          php-version: "${{ inputs.PHP_VERSION }}"
+
+      - name: "Setup OpenDXP environment"
+        env:
+          REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
+        run: |
+            .github/ci/scripts/setup-opendxp-environment.sh
+
+      - name: "Set Symfony version constraint in composer.json"
+        env:
+            SYMFONY_VERSION: "${{ inputs.SYMFONY }}"
+        run: |
+            if [ ! -z "$SYMFONY_VERSION" ]; then
+              .github/ci/scripts/symfony-require-dev.sh
+            fi
+          
+      - name: "Update OpenDXP version"
+        env:
+          OPENDXP_VERSION: "${{ inputs.OPENDXP_VERSION }}"
+          REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
+        run: |
+          if [ ! -z "$OPENDXP_VERSION" ]; then
+                composer require --no-update open-dxp/opendxp:"${OPENDXP_VERSION}"
+          fi
+
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v3"
+        with:
+          dependency-versions: "${{ inputs.DEPENDENCIES }}"
+          composer-options: "${{ inputs.COMPOSER_OPTIONS }}"
+
+      - name: "Run a static analysis with phpstan/phpstan"
+        run: "vendor/bin/phpstan analyse --memory-limit=-1"
+
+      - name: "Generate baseline file"
+        if: ${{ failure() }}
+        run: "vendor/bin/phpstan analyse --memory-limit=-1 --generate-baseline"
+
+      - name: "Upload baseline file"
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+            name: phpstan-baseline.neon
+            path: phpstan-baseline.neon
