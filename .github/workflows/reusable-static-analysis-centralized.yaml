@@ -65,6 +65,7 @@ jobs:
       - name: "Setup OpenDXP environment"
         env:
           REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
+          COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH }}"
         run: |
             .github/ci/scripts/setup-opendxp-environment.sh
 
@@ -75,7 +76,7 @@ jobs:
             if [ ! -z "$SYMFONY_VERSION" ]; then
               .github/ci/scripts/symfony-require-dev.sh
             fi
-          
+
       - name: "Update OpenDXP version"
         env:
           OPENDXP_VERSION: "${{ inputs.OPENDXP_VERSION }}"
