@@ -136,7 +136,7 @@ jobs:
         run: |
           sudo apt-get update --allow-releaseinfo-change
           sudo apt-get install -y ghostscript poppler-utils
-          
+
       - name: Verify MariaDB connection
         run: |
           cp .github/ci/files/.my.cnf ~/.my.cnf
@@ -148,7 +148,7 @@ jobs:
         run: |
           mysql -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
 
-      - name: "Setup Pimcore environment"
+      - name: "Setup OpenDXP environment"
         env:
           REQUIRE_ADMIN_BUNDLE: "${{ inputs.REQUIRE_ADMIN_BUNDLE }}"
         run: |
@@ -168,7 +168,7 @@ jobs:
         uses: "ramsey/composer-install@v3"
         with:
           dependency-versions: "${{ inputs.DEPENDENCIES }}"
-      
+
       - name: "Run cache clear"
         if: ${{ inputs.CACHE_CLEAR == 'true' }}
         run: |
