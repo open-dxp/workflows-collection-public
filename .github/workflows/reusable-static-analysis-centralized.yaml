@@ -35,6 +35,10 @@ on:
         required: false
         type: string
         default: "none"
+      CACHE_CLEAR:
+        required: false
+        type: string
+        default: "true"
       COMPOSER_OPTIONS:
         required: false
         type: string
@@ -91,6 +95,11 @@ jobs:
         with:
           dependency-versions: "${{ inputs.DEPENDENCIES }}"
           composer-options: "${{ inputs.COMPOSER_OPTIONS }}"
+
+      - name: "Run cache clear"
+        if: ${{ inputs.CACHE_CLEAR == 'true' }}
+        run: |
+          ./bin/console cache:clear --no-interaction
 
       - name: "Run a static analysis with phpstan/phpstan"
         run: "vendor/bin/phpstan analyse --memory-limit=-1"
