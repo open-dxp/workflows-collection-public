@@ -25,6 +25,10 @@ on:
                 default: "8.3"
                 required: false
                 type: string
+            cs_fixer_version:
+                default: "v3.91.3"
+                required: false
+                type: string
         secrets:
             PHP_CS_FIXER_GITHUB_TOKEN:
                 required: true
@@ -69,9 +73,16 @@ jobs:
                     fi
 
             -   name: PHP-CS-Fixer
-                uses: docker://oskarstark/php-cs-fixer-ga:latest
-                with:
-                    args: --config=${{ inputs.use_global_config && '.php-cs-fixer-global.php' || inputs.config_file }} --allow-risky yes
+                run: |
+                  wget -q https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/${{ inputs.cs_fixer_version }}/php-cs-fixer.phar
+                  php php-cs-fixer.phar --version
+                  php php-cs-fixer.phar fix --config=${{ inputs.use_global_config && '.php-cs-fixer-global.php' || inputs.config_file }} --allow-risky yes
+
+            -   name: Clean Up
+                run: |
+                  rm php-cs-fixer.phar
+                  rm -rf .workflows-collection-public
+                  rm .php-cs-fixer-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
                 with:
