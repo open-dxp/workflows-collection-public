@@ -1,6 +1,6 @@
 <?php
 
-$finderFile = __DIR__ . '/.php-cs-fixer-finder.php';
+$finderFile = __DIR__ . '/.php-cs-fixer-finder.dist.php';
 
 if (!file_exists($finderFile)) {
     throw new RuntimeException('Finder file not found: ' . $finderFile);
