@@ -9,6 +9,10 @@ on:
             repository:
                 required: true
                 type: string
+            enable_auto_commit:
+                default: false
+                required: false
+                type: boolean
             config_file:
                 default: ".php_cs.dist"
                 required: false
@@ -85,5 +89,6 @@ jobs:
                   rm .php-cs-fixer-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
+                if: ${{ inputs.enable_auto_commit }}
                 with:
                     commit_message: Apply php-cs-fixer changes
