@@ -10,7 +10,7 @@ on:
                 required: true
                 type: string
             enable_auto_commit:
-                default: false
+                default: true
                 required: false
                 type: boolean
             config_file:
