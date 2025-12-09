@@ -38,7 +38,7 @@ on:
       CACHE_CLEAR:
         required: false
         type: string
-        default: "true"
+        default: "false"
       COMPOSER_OPTIONS:
         required: false
         type: string
