@@ -21,6 +21,10 @@ on:
                 default: ".php-cs-fixer-finder.dist.php"
                 required: false
                 type: string
+            php_version:
+                default: "8.3"
+                required: false
+                type: string
         secrets:
             PHP_CS_FIXER_GITHUB_TOKEN:
                 required: true
@@ -31,6 +35,11 @@ jobs:
             contents: write # for stefanzweifel/git-auto-commit-action to push code in repo
         runs-on: ubuntu-latest
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ inputs.php_version }}
+
             -   name: Checkout Repository
                 uses: actions/checkout@v4
                 with:
