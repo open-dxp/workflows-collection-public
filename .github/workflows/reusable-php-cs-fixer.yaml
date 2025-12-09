@@ -1,39 +1,69 @@
 name: "PHP-CS-Fixer"
 
 on:
-  workflow_call:
-    inputs:
-      head_ref:
-        required: true
-        type: string
-      repository:
-        required: true
-        type: string
-      config_file:
-        default: ".php_cs.dist"
-        required: false
-        type: string
-    secrets:
-      PHP_CS_FIXER_GITHUB_TOKEN:
-        required: true
+    workflow_call:
+        inputs:
+            head_ref:
+                required: true
+                type: string
+            repository:
+                required: true
+                type: string
+            config_file:
+                default: ".php_cs.dist"
+                required: false
+                type: string
+            use_global_config:
+                default: false
+                required: false
+                type: boolean
+            finder_file:
+                default: ".php-cs-fixer-finder.php"
+                required: false
+                type: string
+        secrets:
+            PHP_CS_FIXER_GITHUB_TOKEN:
+                required: true
 
 jobs:
-  php-cs-fixer:
-    permissions:
-      contents: write # for stefanzweifel/git-auto-commit-action to push code in repo
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.head_ref }}
-          repository: ${{ inputs.repository }}
-          token: ${{ secrets.PHP_CS_FIXER_GITHUB_TOKEN }}
+    php-cs-fixer:
+        permissions:
+            contents: write # for stefanzweifel/git-auto-commit-action to push code in repo
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout Repository
+                uses: actions/checkout@v4
+                with:
+                    ref: ${{ inputs.head_ref }}
+                    repository: ${{ inputs.repository }}
+                    token: ${{ secrets.PHP_CS_FIXER_GITHUB_TOKEN }}
 
-      - name: PHP-CS-Fixer
-        uses: docker://oskarstark/php-cs-fixer-ga:latest
-        with:
-          args: --config=${{ inputs.config_file }} --allow-risky yes
+            -   name: Checkout global config
+                uses: actions/checkout@v4
+                if: ${{ inputs.use_global_config }}
+                with:
+                    repository: open-dxp/workflows-collection-public
+                    path: .workflows-collection-public
+                    ref: "main"
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Apply php-cs-fixer changes
+            -   name: Copy global config
+                if: ${{ inputs.use_global_config }}
+                run: |
+                    cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer.dist.php .php-cs-fixer-global.dist.php
+
+            -   name: Verify finder file exists
+                if: ${{ inputs.use_global_config }}
+                run: |
+                    if [ ! -f "${{ inputs.finder_file }}" ]; then
+                      echo "Error: Finder file '${{ inputs.finder_file }}' not found!"
+                      exit 1
+                    fi
+
+            -   name: PHP-CS-Fixer
+                uses: docker://oskarstark/php-cs-fixer-ga:latest
+                with:
+                    args: --config=${{ inputs.use_global_config && '.php-cs-fixer-global.php' || inputs.config_file }} --allow-risky yes
+
+            -   uses: stefanzweifel/git-auto-commit-action@v5
+                with:
+                    commit_message: Apply php-cs-fixer changes
