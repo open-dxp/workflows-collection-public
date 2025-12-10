@@ -4,53 +4,7 @@
             "php_version": "default",
             "matrix": [
                 {
-                    "php-version": "8.1",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
                     "php-version": "8.3",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.1,8.2,8.3",
-            "matrix": [
-                {
-                    "php-version": "8.1",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.3",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.1,8.2,8.3,8.4",
-            "matrix": [
-                {
-                    "php-version": "8.1",
                     "database": "mariadb:10.7",
                     "dependencies": "lowest",
                     "experimental": "false",
@@ -60,30 +14,6 @@
                 },
                 {
                     "php-version": "8.4",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "pimcore_version": "12.x-dev as 12.99.9",
-                    "experimental": "true",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2,8.3",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.3",
                     "database": "mariadb:10.7",
                     "dependencies": "highest",
                     "experimental": "false",
@@ -127,7 +57,7 @@
                     "php-version": "8.4",
                     "database": "mariadb:10.7",
                     "dependencies": "highest",
-                    "pimcore_version": "12.x-dev as 12.99.9",
+                    "opendxp_version": "1.x-dev as 12.99.9",
                     "experimental": "true",
                     "require_admin_bundle": "true",
                     "gotenberg_dns": "http://127.0.0.1:31234",
@@ -137,87 +67,8 @@
                     "php-version": "8.4",
                     "database": "mysql:8.4.4",
                     "dependencies": "highest",
-                    "pimcore_version": "12.x-dev as 12.99.9",
+                    "opendxp_version": "1.x-dev as 12.99.9",
                     "experimental": "true",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2,8.3,8.4",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.4",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.4",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "pimcore_version": "12.x-dev as 12.99.9",
-                    "experimental": "true",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.2",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                }
-            ]
-        },
-        {
-            "php_version": "8.1,8.2",
-            "matrix": [
-                {
-                    "php-version": "8.1",
-                    "database": "mariadb:10.7",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false",
-                    "gotenberg_dns": "http://127.0.0.1:31234",
-                    "redis_dns": "redis://127.0.0.1:63379"
-                },
-                {
-                    "php-version": "8.2",
-                    "database": "mariadb:10.7",
-                    "dependencies": "highest",
-                    "experimental": "false",
                     "require_admin_bundle": "true",
                     "gotenberg_dns": "http://127.0.0.1:31234",
                     "redis_dns": "redis://127.0.0.1:63379"

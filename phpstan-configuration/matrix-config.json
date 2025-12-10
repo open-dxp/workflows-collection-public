@@ -4,30 +4,13 @@
             "php_version": "default",
             "matrix": [
                 {
-                    "php-version": "8.2",
+                    "php-version": "8.3",
                     "dependencies": "lowest",
                     "experimental": "false",
                     "require_admin_bundle": "false"
                 },
                 {
-                    "php-version": "8.3",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2,8.3",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "false"
-                },
-                {
-                    "php-version": "8.3",
+                    "php-version": "8.4",
                     "dependencies": "highest",
                     "experimental": "false",
                     "require_admin_bundle": "true"
@@ -52,48 +35,9 @@
                 {
                     "php-version": "8.4",
                     "dependencies": "highest",
-                    "pimcore_version": "1.x-dev as 1.99.9",
+                    "opendxp_version": "1.x-dev as 1.99.9",
                     "experimental": "true",
                     "require_admin_bundle": "true"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2,8.3,8.4",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "dependencies": "lowest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true"
-                },
-                {
-                    "php-version": "8.4",
-                    "dependencies": "highest",
-                    "experimental": "false",
-                    "require_admin_bundle": "true"
-                },
-                {
-                    "php-version": "8.4",
-                    "dependencies": "highest",
-                    "pimcore_version": "1.x-dev as 1.99.9",
-                    "experimental": "true",
-                    "require_admin_bundle": "true"
-                }
-            ]
-        },
-        {
-            "php_version": "8.2",
-            "matrix": [
-                {
-                    "php-version": "8.2",
-                    "dependencies": "lowest",
-                    "experimental": "false"
-                },
-                {
-                    "php-version": "8.2",
-                    "dependencies": "highest",
-                    "experimental": "false"
                 }
             ]
         }
