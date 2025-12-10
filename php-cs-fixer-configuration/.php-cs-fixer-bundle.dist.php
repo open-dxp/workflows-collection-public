@@ -19,8 +19,7 @@ $rules['header_comment'] = [
         'Full copyright and license information is available in' . PHP_EOL .
         'LICENSE.md which is distributed with this source code.' . PHP_EOL
         . PHP_EOL .
-        '@copyright  Copyright (c) Pimcore GmbH (https://pimcore.com)' . PHP_EOL .
-        '@copyright  Modification Copyright (c) OpenDXP (https://www.opendxp.ch)' . PHP_EOL .
+        '@copyright  Copyright Copyright (c) OpenDXP (https://www.opendxp.ch)' . PHP_EOL .
         '@license    https://www.gnu.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)'
 ];
 
