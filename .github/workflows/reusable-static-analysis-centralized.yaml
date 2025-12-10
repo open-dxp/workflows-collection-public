@@ -95,9 +95,9 @@ jobs:
           fi
 
       - name: "Add Composer Suggestions"
-        if: ${{ inputs.COMPOSER_INSTALL_SUGGESTIONS }}"
+        if: ${{ inputs.COMPOSER_INSTALL_SUGGESTIONS }}
         run: |
-          composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-scripts --not-update
+          composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-scripts --no-update
 
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v3"
