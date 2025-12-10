@@ -42,6 +42,10 @@ on:
       COMPOSER_OPTIONS:
         required: false
         type: string
+      COMPOSER_INSTALL_SUGGESTIONS:
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   static-analysis:
@@ -89,6 +93,11 @@ jobs:
           if [ ! -z "$OPENDXP_VERSION" ]; then
                 composer require --no-update open-dxp/opendxp:"${OPENDXP_VERSION}"
           fi
+
+      - name: "Add Composer Suggestions"
+        if: ${{ inputs.COMPOSER_INSTALL_SUGGESTIONS }}"
+        run: |
+          composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-scripts --not-update
 
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v3"
