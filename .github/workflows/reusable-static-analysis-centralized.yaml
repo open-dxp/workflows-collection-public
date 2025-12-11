@@ -21,6 +21,10 @@ on:
             experimental:
                 required: true
                 type: boolean
+            install_codeception_framework:
+                required: false
+                type: boolean
+                default: false
             opendxp_version:
                 required: false
                 type: string
@@ -58,6 +62,7 @@ jobs:
             OPENDXP_TEST: ${{ inputs.opendxp_test }}
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_CI_INSTANCE_IDENTIFIER }}
             OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_CI_ENCRYPTION_SECRET }}
+            OPENDXP_CODECEPTION_VERSION_BRANCH: "1.x"
 
         steps:
             -   name: Checkout Code
@@ -66,6 +71,11 @@ jobs:
             -   name: Configure Git for PAT
                 run: |
                     git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            -   name: Install OpenDXP Codeception Framework
+                if: inputs.install_codeception_framework
+                run: |
+                    git clone -b ${{ env.OPENDXP_CODECEPTION_VERSION_BRANCH }} --single-branch --depth 1 https://github.com/open-dxp/opendxp-codeception-framework.git
 
             -   name: Install PHP
                 uses: shivammathur/setup-php@v2
