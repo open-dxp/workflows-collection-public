@@ -27,7 +27,7 @@
                 {
                     "php-version": "8.3",
                     "database": "mariadb:10.7",
-                    "server_version": "mariadb-10.7",
+                    "server_version": "mariadb-10.7.0",
                     "dependencies": "lowest",
                     "experimental": false,
                     "gotenberg_dns": "http://127.0.0.1:31234",
@@ -45,7 +45,7 @@
                 {
                     "php-version": "8.4",
                     "database": "mariadb:10.7",
-                    "server_version": "mariadb-10.7",
+                    "server_version": "mariadb-10.7.0",
                     "dependencies": "highest",
                     "experimental": false,
                     "gotenberg_dns": "http://127.0.0.1:31234",
@@ -54,7 +54,7 @@
                 {
                     "php-version": "8.4",
                     "database": "mariadb:10.7",
-                    "server_version": "mariadb-10.7",
+                    "server_version": "mariadb-10.7.0",
                     "dependencies": "highest",
                     "opendxp_version": "1.x-dev as 1.99.9",
                     "opendxp_admin_version": "1.x-dev as 1.99.9",
