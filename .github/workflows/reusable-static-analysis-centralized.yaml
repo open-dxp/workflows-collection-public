@@ -52,7 +52,7 @@ jobs:
         runs-on: ubuntu-latest
         continue-on-error: ${{ inputs.experimental == true }}
         env:
-            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=${{ inputs.server_version }}"
+            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=10.11"
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
             APP_ENV: ${{ inputs.app_env }}
             OPENDXP_TEST: ${{ inputs.opendxp_test }}
