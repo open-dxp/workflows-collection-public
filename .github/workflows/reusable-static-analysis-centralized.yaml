@@ -20,7 +20,7 @@ on:
                 type: string
             experimental:
                 required: true
-                type: string
+                type: boolean
             opendxp_version:
                 required: false
                 type: string
@@ -39,9 +39,9 @@ on:
                 required: false
                 type: string
             composer_install_suggestions:
-                default: false
                 required: false
                 type: boolean
+                default: false
 
 jobs:
     static-analysis:
