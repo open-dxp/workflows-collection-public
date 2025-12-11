@@ -96,6 +96,8 @@ on:
                 type: string
 
         secrets:
+            CLA_ACTION_ACCESS_TOKEN:
+                required: false
             COMPOSER_OPENDXP_REPO_PACKAGIST_TOKEN:
                 required: false
             SSH_PRIVATE_KEY_OPENDXP_DEPLOYMENTS_USER:
