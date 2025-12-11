@@ -100,3 +100,5 @@ jobs:
                 if: ${{ inputs.enable_auto_commit }}
                 with:
                     commit_message: Apply php-cs-fixer changes
+                    commit_user_name: OpenDXP Bot
+                    commit_author: OpenDXP Bot <bot@opendxp.io>
