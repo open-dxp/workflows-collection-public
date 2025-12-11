@@ -42,6 +42,9 @@ on:
                 required: false
                 type: boolean
                 default: false
+            composer_root_version:
+                required: false
+                type: string
 
 jobs:
     static-analysis:
@@ -99,6 +102,8 @@ jobs:
 
             -   name: Install dependencies with Composer
                 uses: ramsey/composer-install@v3
+                env:
+                    COMPOSER_ROOT_VERSION: ${{ inputs.composer_root_version || '' }}
                 with:
                     dependency-versions: ${{ inputs.dependencies }}
                     composer-options: ${{ inputs.composer_options }}

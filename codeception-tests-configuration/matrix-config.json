@@ -54,6 +54,7 @@
                     "dependencies": "highest",
                     "opendxp_version": "1.x-dev as 1.99.9",
                     "opendxp_admin_version": "1.x-dev as 1.99.9",
+                    "composer_root_version": "1.x-dev",
                     "experimental": true,
                     "gotenberg_dns": "http://127.0.0.1:31234",
                     "redis_dns": "redis://127.0.0.1:63379"
@@ -64,6 +65,7 @@
                     "dependencies": "highest",
                     "opendxp_version": "1.x-dev as 1.99.9",
                     "opendxp_admin_version": "1.x-dev as 1.99.9",
+                    "composer_root_version": "1.x-dev",
                     "experimental": true,
                     "gotenberg_dns": "http://127.0.0.1:31234",
                     "redis_dns": "redis://127.0.0.1:63379"

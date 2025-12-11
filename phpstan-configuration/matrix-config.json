@@ -33,6 +33,7 @@
                     "dependencies": "highest",
                     "opendxp_version": "1.x-dev as 1.99.9",
                     "opendxp_admin_version": "1.x-dev as 1.99.9",
+                    "composer_root_version": "1.x-dev",
                     "experimental": true
                 }
             ]
