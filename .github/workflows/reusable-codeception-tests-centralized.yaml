@@ -69,6 +69,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            install_ghostscript_and_pdfinfo:
+                required: false
+                type: boolean
+                default: false
             composer_options:
                 required: false
                 type: string
@@ -182,6 +186,7 @@ jobs:
                     php-version: ${{ inputs.php_version }}
 
             -   name: Install Ghostscript and PDFInfo
+                if: inputs.install_ghostscript_and_pdfinfo
                 run: |
                     sudo apt-get update --allow-releaseinfo-change
                     sudo apt-get install -y ghostscript poppler-utils
