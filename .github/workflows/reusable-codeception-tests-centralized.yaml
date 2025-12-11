@@ -53,9 +53,25 @@ on:
                 required: false
                 type: boolean
                 default: false
+            enable_chromium:
+                required: false
+                type: boolean
+                default: false
+            enable_symfony_server:
+                required: false
+                type: boolean
+                default: false
+            install_assets:
+                required: false
+                type: boolean
+                default: false
             composer_options:
                 required: false
                 type: string
+            composer_install_suggestions:
+                required: false
+                type: boolean
+                default: false
             composer_root_version:
                 required: false
                 type: string
@@ -67,6 +83,9 @@ on:
                 required: false
                 type: string
                 default: 'redis://127.0.0.1:63379'
+            codecept_environment:
+                required: false
+                type: string
 
         secrets:
             COMPOSER_OPENDXP_REPO_PACKAGIST_TOKEN:
@@ -134,11 +153,15 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
+            -   name: Configure Git for PAT
+                run: |
+                    git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
             -   name: Install PHP
                 uses: shivammathur/setup-php@v2
                 with:
                     coverage: ${{ inputs.coverage }}
-                    extensions: imagick
+                    extensions: imagick, intl
                     ini-values: display_errors=On, display_startup_errors=On, error_reporting=32767
                     php-version: ${{ inputs.php_version }}
 
@@ -151,9 +174,22 @@ jobs:
                 run: |
                     cp .github/ci/files/.my.cnf ~/.my.cnf
 
-            -   name: Create Database
+            -   name: Setup Database
                 run: |
                     mysql -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
+
+            -   name: Setup Chromium
+                if: inputs.enable_chromium
+                run: |
+                    export DISPLAY=:99
+                    chromedriver --url-base=/wd/hub --port=9515 &
+                    sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+
+            -   name: Setup Symfony Server
+                if: inputs.enable_symfony_server
+                run: |
+                    curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir=$HOME/.symfony/bin
+                    ~/.symfony/bin/symfony server:start --port=8080 --dir=public --allow-http --no-tls --daemon
 
             -   name: Setup OpenDXP environment
                 run: |
@@ -183,6 +219,11 @@ jobs:
                 run: |
                     composer require --no-update "open-dxp/admin-bundle:${{ inputs.opendxp_admin_version }}"
 
+            -   name: Add Composer Suggestions
+                if: inputs.composer_install_suggestions
+                run: |
+                    composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-update
+
             -   name: Install dependencies with Composer
                 uses: ramsey/composer-install@v3
                 env:
@@ -192,9 +233,27 @@ jobs:
                     composer-options: ${{ inputs.composer_options }}
 
             -   name: Run cache clear
-                if: inputs.cache_clear == true
+                if: inputs.cache_clear
                 run: |
                     ./bin/console cache:clear --no-interaction
 
+            -   name: Install Assets
+                if: inputs.install_assets
+                run: |
+                    ./bin/console assets:install public --relative --symlink
+
             -   name: Run Codeception
-                run: vendor/bin/codecept run -c . -vvv --xml
+                run: |
+                    EXTRA_ARGS=""
+                    if [ -n "${{ matrix.codecept_environment }}" ]; then
+                      EXTRA_ARGS="--env ${{ matrix.codecept_environment }}"
+                    fi
+                    vendor/bin/codecept run -c . --debug --xml $EXTRA_ARGS
+
+            -   name: Log Output
+                uses: actions/upload-artifact@v4
+                if: failure()
+                with:
+                    name: "Logs (PHP ${{ inputs.php_version }})"
+                    path: ${{ github.workspace }}/tests/_output/
+                    if-no-files-found: ignore
