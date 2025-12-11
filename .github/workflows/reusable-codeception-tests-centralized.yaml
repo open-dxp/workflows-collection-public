@@ -27,6 +27,10 @@ on:
                 required: true
                 type: boolean
                 default: false
+            use_opendxp_source:
+                required: false
+                type: boolean
+                default: false
             opendxp_version:
                 required: false
                 type: string
@@ -159,6 +163,12 @@ jobs:
                     SYMFONY_VERSION: ${{ matrix.symfony }}
                 run: |
                     .github/ci/scripts/symfony-require-dev.sh
+
+            -   name: Configure OpenDXP install preference
+                if: inputs.use_opendxp_source
+                run: |
+                    composer config 'preferred-install.open-dxp/opendxp' 'source' --file composer.json
+                    composer config 'preferred-install.*' 'dist' --file composer.json
 
             -   name: Update OpenDXP Version
                 if: inputs.opendxp_version && !contains(github.repository, 'open-dxp/opendxp')
