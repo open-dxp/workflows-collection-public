@@ -1,48 +1,41 @@
-name: "Static analysis"
+name: Static analysis
 
 on:
     workflow_call:
         inputs:
-            APP_ENV:
+            app_env:
                 required: true
                 type: string
-            OPENDXP_TEST:
+            opendxp_test:
                 required: true
                 type: string
-            PRIVATE_REPO:
+            php_version:
                 required: true
                 type: string
-            PHP_VERSION:
+            symfony:
+                required: false
+                type: string
+            dependencies:
                 required: true
                 type: string
-            SYMFONY:
-                required: false
-                type: string
-            DEPENDENCIES:
+            experimental:
                 required: true
                 type: string
-            EXPERIMENTAL:
-                required: true
-                type: string
-            OPENDXP_VERSION:
+            opendxp_version:
                 required: false
                 type: string
-            REQUIRE_ADMIN_BUNDLE:
+            coverage:
                 required: false
                 type: string
-                default: "true"
-            COVERAGE:
+                default: 'none'
+            cache_clear:
+                required: false
+                type: boolean
+                default: false
+            composer_options:
                 required: false
                 type: string
-                default: "none"
-            CACHE_CLEAR:
-                required: false
-                type: string
-                default: "false"
-            COMPOSER_OPTIONS:
-                required: false
-                type: string
-            COMPOSER_INSTALL_SUGGESTIONS:
+            composer_install_suggestions:
                 default: false
                 required: false
                 type: boolean
@@ -51,17 +44,16 @@ jobs:
     static-analysis:
         name: Static analysis with phpstan
         runs-on: ubuntu-latest
-        continue-on-error: ${{ inputs.EXPERIMENTAL == 'true' }}
+        continue-on-error: ${{ inputs.experimental == true }}
         env:
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
-            APP_ENV: ${{ inputs.APP_ENV }}
-            OPENDXP_TEST: ${{ inputs.OPENDXP_TEST }}
+            APP_ENV: ${{ inputs.app_env }}
+            OPENDXP_TEST: ${{ inputs.opendxp_test }}
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_CI_INSTANCE_IDENTIFIER }}
             OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_CI_ENCRYPTION_SECRET }}
-            OPENDXP_PRODUCT_KEY: ${{ secrets.OPENDXP_CI_PRODUCT_KEY }}
 
         steps:
-            -   name: Checkout code
+            -   name: Checkout Code
                 uses: actions/checkout@v4
 
             -   name: Configure Git for PAT
@@ -71,46 +63,45 @@ jobs:
             -   name: Install PHP
                 uses: shivammathur/setup-php@v2
                 with:
-                    coverage: ${{ inputs.COVERAGE }}
-                    php-version: ${{ inputs.PHP_VERSION }}
+                    coverage: ${{ inputs.coverage }}
+                    php-version: ${{ inputs.php_version }}
 
             -   name: Setup OpenDXP environment
                 env:
-                    REQUIRE_ADMIN_BUNDLE: ${{ inputs.REQUIRE_ADMIN_BUNDLE }}
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 run: |
                     .github/ci/scripts/setup-opendxp-environment.sh
 
             -   name: Set Symfony version constraint in composer.json
+                if: matrix.symfony
                 env:
-                    SYMFONY_VERSION: ${{ inputs.SYMFONY }}
+                    SYMFONY_VERSION: ${{ matrix.symfony }}
                 run: |
-                    if [ ! -z "$SYMFONY_VERSION" ]; then
-                      .github/ci/scripts/symfony-require-dev.sh
-                    fi
+                    .github/ci/scripts/symfony-require-dev.sh
 
-            -   name: Update OpenDXP version
-                env:
-                    OPENDXP_VERSION: ${{ inputs.OPENDXP_VERSION }}
-                    REQUIRE_ADMIN_BUNDLE: ${{ inputs.REQUIRE_ADMIN_BUNDLE }}
+            -   name: Update OpenDXP Version
+                if: inputs.opendxp_version && !contains(github.repository, 'open-dxp/opendxp')
                 run: |
-                    if [ ! -z "$OPENDXP_VERSION" ]; then
-                          composer require --no-update open-dxp/opendxp:"${OPENDXP_VERSION}"
-                    fi
+                    composer require --no-update "open-dxp/opendxp:${{ inputs.opendxp_version }}"
+
+            -   name: Update OpenDXP Admin Bundle Version
+                if: inputs.opendxp_admin_version && !contains(github.repository, 'open-dxp/admin-bundle')
+                run: |
+                    composer require --no-update "open-dxp/admin-bundle:${{ inputs.opendxp_admin_version }}"
 
             -   name: Add Composer Suggestions
-                if: ${{ inputs.COMPOSER_INSTALL_SUGGESTIONS }}
+                if: inputs.composer_install_suggestions
                 run: |
-                    composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-scripts --no-update
+                    composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-update
 
             -   name: Install dependencies with Composer
                 uses: ramsey/composer-install@v3
                 with:
-                    dependency-versions: ${{ inputs.DEPENDENCIES }}
-                    composer-options: ${{ inputs.COMPOSER_OPTIONS }}
+                    dependency-versions: ${{ inputs.dependencies }}
+                    composer-options: ${{ inputs.composer_options }}
 
             -   name: Run cache clear
-                if: ${{ inputs.CACHE_CLEAR == 'true' }}
+                if: inputs.cache_clear == true
                 run: |
                     ./bin/console cache:clear --no-interaction
 
@@ -118,11 +109,11 @@ jobs:
                 run: vendor/bin/phpstan analyse --memory-limit=-1
 
             -   name: Generate baseline file
-                if: ${{ failure() }}
+                if: failure()
                 run: vendor/bin/phpstan analyse --memory-limit=-1 --generate-baseline
 
             -   name: Upload baseline file
-                if: ${{ failure() }}
+                if: failure()
                 uses: actions/upload-artifact@v4
                 with:
                     name: phpstan-baseline.neon

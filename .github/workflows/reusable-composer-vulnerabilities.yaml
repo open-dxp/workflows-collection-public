@@ -1,133 +1,133 @@
-name: "Reusable composer vulnerabilities check"
+name: Reusable composer vulnerabilities check
 
 on:
     workflow_call:
         inputs:
             php-version:
-              required: false
-              default: "8.2"
-              type: string
+                required: false
+                default: '8.3'
+                type: string
             branch:
-              required: true
-              type: string
+                required: true
+                type: string
             ignore-list:
-              required: false
-              type: string
-              description: Ignore list type (e.g., public)
+                required: false
+                type: string
+                description: Ignore list type (e.g., public)
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
     composer-checks:
-        name: "Composer Checks"
-        runs-on: "ubuntu-latest"
+        name: Composer Checks
+        runs-on: ubuntu-latest
         env:
-          IGNORE_LIST_KEY: ${{ inputs.ignore-list }}
+            IGNORE_LIST_KEY: ${{ inputs.ignore-list }}
         steps:
-            - name: "Checkout dependent workflow code"
-              uses: "actions/checkout@v4"
-              with:
-                  ref: ${{ inputs.branch }}
+            -   name: Checkout dependent workflow code
+                uses: actions/checkout@v4
+                with:
+                    ref: ${{ inputs.branch }}
 
-            - name: "Checkout reusable workflow repository"
-              uses: "actions/checkout@v4"
-              with:
-                  repository: "open-dxp/workflows-collection-public"
-                  path: ".workflows-collection-public"
-                  ref: "main"
+            -   name: Checkout reusable workflow repository
+                uses: actions/checkout@v4
+                with:
+                    repository: open-dxp/workflows-collection-public
+                    path: .workflows-collection-public
+                    ref: 'main'
 
-            - name: "Install PHP"
-              uses: "shivammathur/setup-php@v2"
-              with:
-                  coverage: "none"
-                  php-version: ${{ inputs.php-version }}
+            -   name: Install PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    coverage: 'none'
+                    php-version: ${{ inputs.php-version }}
 
-            - name: Get Composer cache directory
-              id: composer-cache
-              run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+            -   name: Get Composer cache directory
+                id: composer-cache
+                run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
-            - name: Cache Composer dependencies
-              uses: actions/cache@v4
-              with:
-                  path: ${{ steps.composer-cache.outputs.dir }}
-                  key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}
+            -   name: Cache Composer dependencies
+                uses: actions/cache@v4
+                with:
+                    path: ${{ steps.composer-cache.outputs.dir }}
+                    key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}
 
-            - name: "Install dependencies with Composer"
-              uses: "ramsey/composer-install@v2"
-              with:
-                  dependency-versions: "highest"
-                  composer-options: "--no-scripts"
+            -   name: Install dependencies with Composer
+                uses: ramsey/composer-install@v2
+                with:
+                    dependency-versions: 'highest'
+                    composer-options: '--no-scripts'
 
-            - name: "Check if composer.json has a config section and add CVEs to ignore list"
-              id: update-composer-json
-              run: |
-                COMPOSER_FILE="composer.json"
-
-                # Extract the CVE ignore list from vulnerabilities-ignore-list.json based on the key
-                IGNORE_CVES=$(jq -r --arg key "$IGNORE_LIST_KEY" '.[$key]' .workflows-collection-public/config/vulnerabilities-ignore-list.json)
-
-                # Check if IGNORE_CVES is a valid array, and then proceed
-                if [[ -n "$IGNORE_CVES" && "$IGNORE_CVES" != "null" ]]; then
-                  # Check if composer.json already has a config section
-                  if jq -e '.config' composer.json > /dev/null; then
-                    echo "Config section exists, updating it..."
-
-                    # Check if the 'audit' section exists under 'config'
-                    if jq -e '.config.audit' composer.json > /dev/null; then
-                      echo "Audit section exists, appending CVEs to the ignore list..."
-                      # Append the CVEs to the existing audit.ignore array
-                      jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore += $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
-                    else
-                      echo "Audit section does not exist, creating audit.ignore..."
-                      # Create the audit section with the ignore array
-                      jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore = $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+            -   name: Check if composer.json has a config section and add CVEs to ignore list
+                id: update-composer-json
+                run: |
+                    COMPOSER_FILE="composer.json"
+                    
+                    # Extract the CVE ignore list from vulnerabilities-ignore-list.json based on the key
+                    IGNORE_CVES=$(jq -r --arg key "$IGNORE_LIST_KEY" '.[$key]' .workflows-collection-public/config/vulnerabilities-ignore-list.json)
+                    
+                    # Check if IGNORE_CVES is a valid array, and then proceed
+                    if [[ -n "$IGNORE_CVES" && "$IGNORE_CVES" != "null" ]]; then
+                      # Check if composer.json already has a config section
+                      if jq -e '.config' composer.json > /dev/null; then
+                        echo "Config section exists, updating it..."
+                    
+                        # Check if the 'audit' section exists under 'config'
+                        if jq -e '.config.audit' composer.json > /dev/null; then
+                          echo "Audit section exists, appending CVEs to the ignore list..."
+                          # Append the CVEs to the existing audit.ignore array
+                          jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore += $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+                        else
+                          echo "Audit section does not exist, creating audit.ignore..."
+                          # Create the audit section with the ignore array
+                          jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore = $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+                        fi
+                      else
+                        echo "Config section does not exist, creating config.audit.ignore..."
+                        # Add the config and audit sections with the ignore array
+                        jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore = $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+                      fi
                     fi
-                  else
-                    echo "Config section does not exist, creating config.audit.ignore..."
-                    # Add the config and audit sections with the ignore array
-                    jq --argjson cves "$IGNORE_CVES" '.config.audit.ignore = $cves' composer.json > composer.json.tmp && mv composer.json.tmp composer.json
-                  fi
-                fi
+                    
+                    # Print the updated composer.json
+                    cat $COMPOSER_FILE
 
-                # Print the updated composer.json
-                cat $COMPOSER_FILE
+            -   name: Check for security vulnerabilities
+                id: vulnerabilities
+                continue-on-error: true
+                run: |
+                    VULNERABILITIES=$(composer audit || true)
+                    EXIT_CODE=$?
+                    
+                    echo "Raw composer audit output:"
+                    echo "$VULNERABILITIES"
+                    
+                    if [ "$EXIT_CODE" -ne 0 ]; then
+                        echo "Security vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+                        echo "$VULNERABILITIES" | awk '{print "- " $0}' >> $GITHUB_STEP_SUMMARY
+                        {
+                          echo "VULNERABILITIES_ENV<<EOF"
+                          echo "$VULNERABILITIES"
+                          echo "EOF"
+                        } >> $GITHUB_ENV
+                        exit 1
+                    fi
 
-            - name: "Check for security vulnerabilities"
-              id: vulnerabilities
-              continue-on-error: true
-              run: |
-                VULNERABILITIES=$(composer audit || true)
-                EXIT_CODE=$?
-
-                echo "Raw composer audit output:"
-                echo "$VULNERABILITIES"
-            
-                if [ "$EXIT_CODE" -ne 0 ]; then
-                    echo "Security vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
-                    echo "$VULNERABILITIES" | awk '{print "- " $0}' >> $GITHUB_STEP_SUMMARY
-                    {
-                      echo "VULNERABILITIES_ENV<<EOF"
-                      echo "$VULNERABILITIES"
-                      echo "EOF"
-                    } >> $GITHUB_ENV
-                    exit 1
-                fi
-
-            - name: Send results of previous checks to Microsoft Teams
-              if: steps.vulnerabilities.outcome == 'failure'
-              uses: aliencube/microsoft-teams-actions@v0.8.0
-              with:
-                webhook_uri: ${{ secrets.TEAMS_COMPOSER_VULNERABILITY_URI }}
-                title: ${{ github.repository }}@${{ inputs.branch }} outdated - vulnerabilities report
-                summary: ${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}
-                text: |
-                  Please check the following link for details: 
-                  ${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}
-            
-                  **Vulnerabilities found:**
-                  ```
-                  ${{ env.VULNERABILITIES_ENV }}
-                  ```
-            
-                  If the list is too long, please refer to the link above.
+            -   name: Send results of previous checks to Microsoft Teams
+                if: steps.vulnerabilities.outcome == 'failure'
+                uses: aliencube/microsoft-teams-actions@v0.8.0
+                with:
+                    webhook_uri: ${{ secrets.TEAMS_COMPOSER_VULNERABILITY_URI }}
+                    title: ${{ github.repository }}@${{ inputs.branch }} outdated - vulnerabilities report
+                    summary: ${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}
+                    text: |
+                        Please check the following link for details: 
+                        ${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}
+                        
+                        **Vulnerabilities found:**
+                        ```
+                        ${{ env.VULNERABILITIES_ENV }}
+                        ```
+                        
+                        If the list is too long, please refer to the link above.

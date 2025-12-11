@@ -1,4 +1,4 @@
-name: "PHP-CS-Fixer"
+name: PHP-CS-Fixer
 
 on:
     workflow_call:
@@ -61,21 +61,21 @@ jobs:
 
             -   name: Checkout global config
                 uses: actions/checkout@v4
-                if: ${{ inputs.use_global_config }}
+                if: inputs.use_global_config
                 with:
                     repository: open-dxp/workflows-collection-public
                     path: .workflows-collection-public
-                    ref: "main"
+                    ref: 'main'
 
             -   name: Copy global config
-                if: ${{ inputs.use_global_config }}
+                if: inputs.use_global_config
                 run: |
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer.dist.php .php-cs-fixer-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-bundle.dist.php .php-cs-fixer-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-rules.dist.php .php-cs-fixer-rules-global.php
 
             -   name: Verify finder file exists
-                if: ${{ inputs.use_global_config }}
+                if: inputs.use_global_config
                 run: |
                     if [ ! -f "${{ inputs.finder_file }}" ]; then
                       echo "Error: Finder file '${{ inputs.finder_file }}' not found!"
@@ -97,7 +97,7 @@ jobs:
                   rm .php-cs-fixer-rules-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
-                if: ${{ inputs.enable_auto_commit }}
+                if: inputs.enable_auto_commit
                 with:
                     commit_message: Apply php-cs-fixer changes
                     commit_user_name: OpenDXP Bot
