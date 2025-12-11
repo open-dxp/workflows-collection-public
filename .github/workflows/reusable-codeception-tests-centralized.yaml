@@ -18,7 +18,7 @@ on:
                 type: string
                 default: 'mariadb:10.7'
             server_version:
-                required: false
+                required: true
                 type: string
             dependencies:
                 required: true
@@ -89,7 +89,7 @@ jobs:
         continue-on-error: ${{ inputs.experimental == true }}
         env:
             SYMFONY_DEPRECATIONS_HELPER: "weak"
-            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test"
+            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=${{ inputs.server_version }}"
             OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
             APP_ENV: ${{ inputs.app_env }}
