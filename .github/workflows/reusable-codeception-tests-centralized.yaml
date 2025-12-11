@@ -79,6 +79,10 @@ on:
             composer_root_version:
                 required: false
                 type: string
+            enable_gotenberg_service:
+                required: false
+                type: boolean
+                default: false
             gotenberg_dns:
                 required: false
                 type: string
@@ -145,7 +149,7 @@ jobs:
                     OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
 
             gotenberg:
-                image: gotenberg/gotenberg:8
+                image: ${{ inputs.enable_gotenberg_service == true && 'gotenberg/gotenberg:8' || '' }}
                 ports:
                     - 31234:3000
 
@@ -155,7 +159,7 @@ jobs:
                     - 63379:6379
 
         steps:
-            -   name: Checkout code
+            -   name: Checkout Code
                 uses: actions/checkout@v4
 
             -   name: Configure Git for PAT
