@@ -30,6 +30,9 @@ on:
             opendxp_version:
                 required: false
                 type: string
+            opendxp_admin_version:
+                required: false
+                type: string
             opendxp_open_search_host:
                 required: false
                 type: string

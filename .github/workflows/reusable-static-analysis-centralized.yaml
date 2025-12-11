@@ -24,6 +24,9 @@ on:
             opendxp_version:
                 required: false
                 type: string
+            opendxp_admin_version:
+                required: false
+                type: string
             coverage:
                 required: false
                 type: string
