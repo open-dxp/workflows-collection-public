@@ -87,6 +87,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            enable_redis_service:
+                required: false
+                type: boolean
+                default: false
             gotenberg_dns:
                 required: false
                 type: string
@@ -160,7 +164,7 @@ jobs:
                     - 31234:3000
 
             redis:
-                image: redis
+                image: ${{ inputs.enable_redis_service == true && 'redis' || '' }}
                 ports:
                     - 63379:6379
 
