@@ -50,6 +50,10 @@ on:
                 required: false
                 type: string
 
+        secrets:
+            CLA_ACTION_ACCESS_TOKEN:
+                required: false
+
 jobs:
     static-analysis:
         name: Static analysis with phpstan
