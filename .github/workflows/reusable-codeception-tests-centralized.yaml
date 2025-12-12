@@ -145,7 +145,13 @@ jobs:
                 image: ${{ inputs.database }}
                 ports:
                     - 33006:3306
-                options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=3
+                    --max-connections=1000
+                    --max-allowed-packet=32505856
                 env:
                     MYSQL_ALLOW_EMPTY_PASSWORD: yes
 
