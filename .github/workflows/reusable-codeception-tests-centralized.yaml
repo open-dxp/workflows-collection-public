@@ -183,6 +183,8 @@ jobs:
             -   name: Run Post Checkout Action
                 if: inputs.execute_post_checkout_action
                 uses: ./.github/actions/post-checkout-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
             -   name: Install OpenDXP Codeception Framework
                 if: inputs.install_codeception_framework
