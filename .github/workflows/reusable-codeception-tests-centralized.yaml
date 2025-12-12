@@ -290,5 +290,7 @@ jobs:
                 if: failure()
                 with:
                     name: "Logs (PHP ${{ inputs.php_version }})"
-                    path: ${{ github.workspace }}/tests/_output/
                     if-no-files-found: ignore
+                    path: |
+                        ${{ github.workspace }}/tests/_output/
+                        ${{ github.workspace }}/var/log/
