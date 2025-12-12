@@ -224,7 +224,7 @@ jobs:
                 if: inputs.enable_symfony_server
                 run: |
                     curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir=$HOME/.symfony/bin
-                    ~/.symfony/bin/symfony server:start --port=8080 --dir=public --allow-http --no-tls --daemon
+                    ~/.symfony/bin/symfony server:start --port=8080 --allow-http --no-tls --daemon
 
             -   name: Setup OpenDXP environment
                 run: |
