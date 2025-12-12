@@ -102,10 +102,10 @@ on:
             codecept_environment:
                 required: false
                 type: string
-            post_checkout_action:
+            execute_post_checkout_action:
                 required: false
-                type: string
-                default: ''
+                type: boolean
+                default: false
 
         secrets:
             CLA_ACTION_ACCESS_TOKEN:
@@ -181,8 +181,8 @@ jobs:
                     git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
             -   name: Run Post Checkout Action
-                if: ${{ inputs.post_checkout_action != '' }}
-                uses: ${{ inputs.post_checkout_action }}
+                if: inputs.execute_post_checkout_action
+                uses: ./.github/actions/post-checkout-action
 
             -   name: Install OpenDXP Codeception Framework
                 if: inputs.install_codeception_framework
