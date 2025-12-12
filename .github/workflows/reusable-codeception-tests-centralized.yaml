@@ -280,8 +280,8 @@ jobs:
             -   name: Run Codeception
                 run: |
                     EXTRA_ARGS=""
-                    if [ -n "${{ matrix.codecept_environment }}" ]; then
-                      EXTRA_ARGS="--env ${{ matrix.codecept_environment }}"
+                    if [ -n "${{ inputs.codecept_environment }}" ]; then
+                      EXTRA_ARGS="--env ${{ inputs.codecept_environment }}"
                     fi
                     vendor/bin/codecept run -c . --debug --xml $EXTRA_ARGS
 
