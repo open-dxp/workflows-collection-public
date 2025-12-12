@@ -150,8 +150,6 @@ jobs:
                     --health-interval=10s
                     --health-timeout=5s
                     --health-retries=3
-                    --max-connections=1000
-                    --max-allowed-packet=32505856
                 env:
                     MYSQL_ALLOW_EMPTY_PASSWORD: yes
 
@@ -214,6 +212,8 @@ jobs:
             -   name: Set Database Configuration
                 run: |
                     cp .github/ci/files/.my.cnf ~/.my.cnf
+                    mysql -e "SET GLOBAL max_connections=1000;"
+                    mysql -e "SET GLOBAL max_allowed_packet=32505856;"
 
             -   name: Setup Database
                 run: |
