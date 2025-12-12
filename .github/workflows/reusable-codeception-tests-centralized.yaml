@@ -181,7 +181,7 @@ jobs:
                     git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
             -   name: Run Post Checkout Action
-                if: inputs.post_checkout_action != ''
+                if: ${{ inputs.post_checkout_action != '' }}
                 uses: ${{ inputs.post_checkout_action }}
 
             -   name: Install OpenDXP Codeception Framework
