@@ -140,6 +140,9 @@ jobs:
             OPENDXP_TEST_REDIS_DSN: ${{inputs.redis_dsn}}
             OPENDXP_TEST_GOTENBERG_DNS: ${{inputs.gotenberg_dns}}
             OPENDXP_CODECEPTION_FRAMEWORK_VERSION_BRANCH: "1.x"
+            WEBDRIVER_HOST: "localhost"
+            WEBDRIVER_URL: "http://localhost:8080/"
+
         services:
             database:
                 image: ${{ inputs.database }}
