@@ -293,7 +293,7 @@ jobs:
                     if [ -n "${{ inputs.codecept_environment }}" ]; then
                       EXTRA_ARGS="--env ${{ inputs.codecept_environment }}"
                     fi
-                    vendor/bin/codecept run -c . --debug --xml $EXTRA_ARGS
+                    vendor/bin/codecept run -c . --xml $EXTRA_ARGS
 
             -   name: Log Output
                 uses: actions/upload-artifact@v4
