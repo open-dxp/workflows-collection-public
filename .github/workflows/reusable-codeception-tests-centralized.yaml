@@ -133,6 +133,7 @@ jobs:
             OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=${{ inputs.server_version }}"
             OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
+            OPENDXP_CLASS_DIRECTORY: "${{ github.workspace }}/var/classes"
             APP_ENV: ${{ inputs.app_env }}
             OPENDXP_TEST: ${{ inputs.opendxp_test }}
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
