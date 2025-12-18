@@ -273,6 +273,7 @@ jobs:
                 uses: ramsey/composer-install@v3
                 env:
                     COMPOSER_ROOT_VERSION: ${{ inputs.composer_root_version || '' }}
+                    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
                     dependency-versions: ${{ inputs.dependencies }}
                     composer-options: ${{ inputs.composer_options }}
