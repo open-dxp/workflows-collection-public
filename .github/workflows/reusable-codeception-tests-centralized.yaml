@@ -122,6 +122,8 @@ on:
                 required: false
             OPENDXP_ENCRYPTION_SECRET:
                 required: false
+            COMPOSER_AUTH:
+                required: false
 
 jobs:
     codeception-tests:

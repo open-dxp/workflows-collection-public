@@ -57,6 +57,8 @@ on:
         secrets:
             CLA_ACTION_ACCESS_TOKEN:
                 required: false
+            COMPOSER_AUTH:
+                required: false
 
 jobs:
     static-analysis:
