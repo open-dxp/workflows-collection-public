@@ -49,6 +49,10 @@ on:
             composer_root_version:
                 required: false
                 type: string
+            execute_post_checkout_action:
+                required: false
+                type: boolean
+                default: false
 
         secrets:
             CLA_ACTION_ACCESS_TOKEN:
@@ -75,6 +79,12 @@ jobs:
             -   name: Configure Git for PAT
                 run: |
                     git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            -   name: Run Post Checkout Action
+                if: inputs.execute_post_checkout_action
+                uses: ./.github/actions/post-checkout-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
             -   name: Install OpenDXP Codeception Framework
                 if: inputs.install_codeception_framework
