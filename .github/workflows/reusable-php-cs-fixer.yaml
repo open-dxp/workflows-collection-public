@@ -72,6 +72,7 @@ jobs:
                 run: |
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer.dist.php .php-cs-fixer-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-bundle.dist.php .php-cs-fixer-bundle-global.php
+                    cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-ecommerce-bundle.dist.php .php-cs-fixer-ecommerce-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-rules.dist.php .php-cs-fixer-rules-global.php
 
             -   name: Verify finder file exists
@@ -86,7 +87,7 @@ jobs:
                 run: |
                   wget -q https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/${{ inputs.cs_fixer_version }}/php-cs-fixer.phar
                   php php-cs-fixer.phar --version
-                  php php-cs-fixer.phar fix --config=${{ inputs.use_global_config && (inputs.cs_fixer_mode == 'core' && '.php-cs-fixer-global.php' || '.php-cs-fixer-bundle-global.php') || inputs.config_file }} --allow-risky yes
+                  php php-cs-fixer.phar fix --config=${{ inputs.use_global_config && (inputs.cs_fixer_mode == 'core' && '.php-cs-fixer-global.php' || inputs.cs_fixer_mode == 'ecommerce_bundle' && '.php-cs-fixer-ecommerce-bundle.dist.php' || '.php-cs-fixer-bundle-global.php') || inputs.config_file }} --allow-risky yes
 
             -   name: Clean Up
                 run: |
