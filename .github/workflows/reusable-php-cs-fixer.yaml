@@ -95,7 +95,8 @@ jobs:
                   rm -rf .workflows-collection-public
                   rm .php-cs-fixer-global.php
                   rm .php-cs-fixer-bundle-global.php
-                  rm .php-cs-fixer-rules-global.php
+                  rm .php-cs-fixer-bundle-global.php
+                  rm .php-cs-fixer-ecommerce-bundle-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
                 if: inputs.enable_auto_commit
