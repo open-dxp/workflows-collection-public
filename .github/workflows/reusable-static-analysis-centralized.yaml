@@ -53,6 +53,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            execute_post_install_action:
+                required: false
+                type: boolean
+                default: false
 
         secrets:
             CLA_ACTION_ACCESS_TOKEN:
@@ -138,6 +142,12 @@ jobs:
                 if: inputs.cache_clear == true
                 run: |
                     ./bin/console cache:clear --no-interaction
+
+            -   name: Run Post Install Action
+                if: inputs.execute_post_install_action
+                uses: ./.github/actions/post-install-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
             -   name: Run a static analysis with phpstan/phpstan
                 run: vendor/bin/phpstan analyse --memory-limit=-1

@@ -106,6 +106,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            execute_post_install_action:
+                required: false
+                type: boolean
+                default: false
 
         secrets:
             CLA_ACTION_ACCESS_TOKEN:
@@ -289,6 +293,12 @@ jobs:
                 if: inputs.install_assets
                 run: |
                     ./bin/console assets:install public --relative --symlink
+
+            -   name: Run Post Install Action
+                if: inputs.execute_post_install_action
+                uses: ./.github/actions/post-install-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
             -   name: Run Codeception
                 run: |
