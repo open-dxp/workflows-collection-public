@@ -12,6 +12,14 @@ on:
             php_version:
                 required: true
                 type: string
+            database:
+                required: false
+                type: string
+                default: 'mariadb:10.7'
+            enable_database:
+                required: false
+                type: boolean
+                default: false
             symfony:
                 required: false
                 type: string
@@ -70,13 +78,26 @@ jobs:
         runs-on: ubuntu-latest
         continue-on-error: ${{ inputs.experimental == true }}
         env:
-            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=10.11"
+            OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=mariadb-10.7.0"
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}
             APP_ENV: ${{ inputs.app_env }}
             OPENDXP_TEST: ${{ inputs.opendxp_test }}
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_CI_INSTANCE_IDENTIFIER }}
             OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_CI_ENCRYPTION_SECRET }}
             OPENDXP_CODECEPTION_FRAMEWORK_VERSION_BRANCH: "1.x"
+
+        services:
+            database:
+                image: ${{ inputs.database }}
+                ports:
+                    - 33006:3306
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=3
+                env:
+                    MYSQL_ALLOW_EMPTY_PASSWORD: yes
 
         steps:
             -   name: Checkout Code
@@ -85,6 +106,18 @@ jobs:
             -   name: Configure Git for PAT
                 run: |
                     git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            -   name: Set Database Configuration
+                if: inputs.enable_database
+                run: |
+                    cp .github/ci/files/.my.cnf ~/.my.cnf
+                    mysql -e "SET GLOBAL max_connections=1000;"
+                    mysql -e "SET GLOBAL max_allowed_packet=32505856;"
+
+            -   name: Setup Database
+                if: inputs.enable_database
+                run: |
+                    mysql -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
 
             -   name: Run Post Checkout Action
                 if: inputs.execute_post_checkout_action
