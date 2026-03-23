@@ -284,6 +284,12 @@ jobs:
                     dependency-versions: ${{ inputs.dependencies }}
                     composer-options: ${{ inputs.composer_options }}
 
+            -   name: Run Post Install Action
+                if: inputs.execute_post_install_action
+                uses: ./.github/actions/post-install-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
+
             -   name: Run cache clear
                 if: inputs.cache_clear
                 run: |
@@ -293,12 +299,6 @@ jobs:
                 if: inputs.install_assets
                 run: |
                     ./bin/console assets:install public --relative --symlink
-
-            -   name: Run Post Install Action
-                if: inputs.execute_post_install_action
-                uses: ./.github/actions/post-install-action
-                with:
-                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
             -   name: Run Codeception
                 run: |

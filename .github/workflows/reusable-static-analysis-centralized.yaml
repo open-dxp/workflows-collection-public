@@ -138,16 +138,16 @@ jobs:
                     dependency-versions: ${{ inputs.dependencies }}
                     composer-options: ${{ inputs.composer_options }}
 
-            -   name: Run cache clear
-                if: inputs.cache_clear == true
-                run: |
-                    ./bin/console cache:clear --no-interaction
-
             -   name: Run Post Install Action
                 if: inputs.execute_post_install_action
                 uses: ./.github/actions/post-install-action
                 with:
                     cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
+
+            -   name: Run cache clear
+                if: inputs.cache_clear == true
+                run: |
+                    ./bin/console cache:clear --no-interaction
 
             -   name: Run a static analysis with phpstan/phpstan
                 run: vendor/bin/phpstan analyse --memory-limit=-1
