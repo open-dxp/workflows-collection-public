@@ -169,7 +169,7 @@ jobs:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
                     dependency-versions: ${{ inputs.dependencies }}
-                    composer-options: ${{ inputs.composer_options }}
+                    composer-options: ${{ inputs.composer_options }}${{ contains(github.event.pull_request.labels.*.name, 'php-platform-compat') && ' --ignore-platform-req=php' || '' }}
 
             -   name: Run Post Install Action
                 if: inputs.execute_post_install_action
