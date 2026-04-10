@@ -37,6 +37,34 @@
                     "experimental": true
                 }
             ]
+        },
+        {
+            "php_version": "8.3,8.4,8.5",
+            "matrix": [
+                {
+                    "php-version": "8.3",
+                    "dependencies": "lowest",
+                    "experimental": false
+                },
+                {
+                    "php-version": "8.4",
+                    "dependencies": "highest",
+                    "experimental": false
+                },
+                {
+                    "php-version": "8.5",
+                    "dependencies": "highest",
+                    "experimental": false
+                },
+                {
+                    "php-version": "8.5",
+                    "dependencies": "highest",
+                    "opendxp_version": "1.x-dev as 1.99.9",
+                    "opendxp_admin_version": "1.x-dev as 1.99.9",
+                    "composer_root_version": "1.x-dev",
+                    "experimental": true
+                }
+            ]
         }
     ]
 }
