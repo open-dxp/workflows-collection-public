@@ -66,7 +66,7 @@ return [
     'trailing_comma_in_multiline'         => true,
     'whitespace_after_comma_in_array'     => true,
     'multiline_promoted_properties'       => [
-        'minimum_number_of_parameters' => 3
+        'minimum_number_of_parameters' => 2
     ],
     'global_namespace_import'             => [
         'import_classes'   => true,

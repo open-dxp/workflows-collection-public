@@ -34,7 +34,11 @@ on:
                 required: false
                 type: string
             cs_fixer_version:
-                default: "v3.91.3"
+                default: "v3.95.2"
+                required: false
+                type: string
+            fork_point:
+                default: ""
                 required: false
                 type: string
         secrets:
@@ -58,6 +62,7 @@ jobs:
                     ref: ${{ inputs.head_ref }}
                     repository: ${{ inputs.repository }}
                     token: ${{ secrets.PHP_CS_FIXER_GITHUB_TOKEN }}
+                    fetch-depth: ${{ inputs.fork_point != '' && '0' || '1' }}
 
             -   name: Checkout global config
                 uses: actions/checkout@v4
@@ -74,6 +79,7 @@ jobs:
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-bundle.dist.php .php-cs-fixer-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-ecommerce-bundle.dist.php .php-cs-fixer-ecommerce-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-rules.dist.php .php-cs-fixer-rules-global.php
+                    cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-fork-header.dist.php .php-cs-fixer-fork-header-global.php
 
             -   name: Verify finder file exists
                 if: inputs.use_global_config
@@ -87,16 +93,31 @@ jobs:
                 run: |
                   wget -q https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/${{ inputs.cs_fixer_version }}/php-cs-fixer.phar
                   php php-cs-fixer.phar --version
-                  php php-cs-fixer.phar fix --config=${{ inputs.use_global_config && (inputs.cs_fixer_mode == 'core' && '.php-cs-fixer-global.php' || inputs.cs_fixer_mode == 'ecommerce_bundle' && '.php-cs-fixer-ecommerce-bundle-global.php' || '.php-cs-fixer-bundle-global.php') || inputs.config_file }} --allow-risky yes
+
+                  if ${{ inputs.use_global_config }}; then
+                    if [ "${{ inputs.cs_fixer_mode }}" = "core" ]; then
+                      CONFIG_FILE=".php-cs-fixer-global.php"
+                    elif [ "${{ inputs.cs_fixer_mode }}" = "ecommerce_bundle" ]; then
+                      CONFIG_FILE=".php-cs-fixer-ecommerce-bundle-global.php"
+                    else
+                      CONFIG_FILE=".php-cs-fixer-bundle-global.php"
+                    fi
+                  else
+                    CONFIG_FILE="${{ inputs.config_file }}"
+                  fi
+
+                  if [ -n "${{ inputs.fork_point }}" ]; then
+                    FORK_POINT="${{ inputs.fork_point }}" CS_FIXER_MODE=forked php php-cs-fixer.phar fix --config="$CONFIG_FILE" --allow-risky yes
+                    FORK_POINT="${{ inputs.fork_point }}" CS_FIXER_MODE=new php php-cs-fixer.phar fix --config="$CONFIG_FILE" --allow-risky yes
+                  else
+                    php php-cs-fixer.phar fix --config="$CONFIG_FILE" --allow-risky yes
+                  fi
 
             -   name: Clean Up
                 run: |
-                  rm php-cs-fixer.phar
+                  rm -f php-cs-fixer.phar
                   rm -rf .workflows-collection-public
-                  rm .php-cs-fixer-global.php
-                  rm .php-cs-fixer-bundle-global.php
-                  rm .php-cs-fixer-ecommerce-bundle-global.php
-                  rm .php-cs-fixer-rules-global.php
+                  rm -f .php-cs-fixer-global.php .php-cs-fixer-bundle-global.php .php-cs-fixer-ecommerce-bundle-global.php .php-cs-fixer-rules-global.php .php-cs-fixer-fork-header-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
                 if: inputs.enable_auto_commit
