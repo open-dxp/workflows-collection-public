@@ -78,6 +78,7 @@ jobs:
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer.dist.php .php-cs-fixer-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-bundle.dist.php .php-cs-fixer-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-ecommerce-bundle.dist.php .php-cs-fixer-ecommerce-bundle-global.php
+                    cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-gal-digital-bundle.dist.php .php-cs-fixer-gal-digital-bundle-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-rules.dist.php .php-cs-fixer-rules-global.php
                     cp .workflows-collection-public/php-cs-fixer-configuration/.php-cs-fixer-fork-header.dist.php .php-cs-fixer-fork-header-global.php
 
@@ -99,6 +100,8 @@ jobs:
                       CONFIG_FILE=".php-cs-fixer-global.php"
                     elif [ "${{ inputs.cs_fixer_mode }}" = "ecommerce_bundle" ]; then
                       CONFIG_FILE=".php-cs-fixer-ecommerce-bundle-global.php"
+                    elif [ "${{ inputs.cs_fixer_mode }}" = "gal_digital_bundle" ]; then
+                      CONFIG_FILE=".php-cs-fixer-gal-digital-bundle-global.php"
                     else
                       CONFIG_FILE=".php-cs-fixer-bundle-global.php"
                     fi
@@ -117,7 +120,7 @@ jobs:
                 run: |
                   rm -f php-cs-fixer.phar
                   rm -rf .workflows-collection-public
-                  rm -f .php-cs-fixer-global.php .php-cs-fixer-bundle-global.php .php-cs-fixer-ecommerce-bundle-global.php .php-cs-fixer-rules-global.php .php-cs-fixer-fork-header-global.php
+                  rm -f .php-cs-fixer-global.php .php-cs-fixer-bundle-global.php .php-cs-fixer-ecommerce-bundle-global.php .php-cs-fixer-gal-digital-bundle-global.php .php-cs-fixer-rules-global.php .php-cs-fixer-fork-header-global.php
 
             -   uses: stefanzweifel/git-auto-commit-action@v5
                 if: inputs.enable_auto_commit
