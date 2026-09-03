@@ -87,6 +87,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            enable_opensearch_service:
+                required: false
+                type: boolean
+                default: false
             enable_redis_service:
                 required: false
                 type: boolean
@@ -159,12 +163,13 @@ jobs:
                     --health-cmd="mysqladmin ping"
                     --health-interval=10s
                     --health-timeout=5s
-                    --health-retries=3
+                    --health-retries=12
+                    --health-start-period=30s
                 env:
                     MYSQL_ALLOW_EMPTY_PASSWORD: yes
 
             opensearch:
-                image: opensearchproject/opensearch:${{ inputs.opendxp_opensearch_version }}
+                image: ${{ inputs.enable_opensearch_service == true && format('opensearchproject/opensearch:{0}', inputs.opendxp_opensearch_version) || '' }}
                 ports:
                     - ${{ inputs.opendxp_open_search_host }}:9200
                 env:
