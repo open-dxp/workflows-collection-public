@@ -26,12 +26,12 @@ jobs:
             IGNORE_LIST_KEY: ${{ inputs.ignore-list }}
         steps:
             -   name: Checkout dependent workflow code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7
                 with:
                     ref: ${{ inputs.branch }}
 
             -   name: Checkout reusable workflow repository
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7
                 with:
                     repository: open-dxp/workflows-collection-public
                     path: .workflows-collection-public
@@ -54,7 +54,7 @@ jobs:
                     key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}
 
             -   name: Install dependencies with Composer
-                uses: ramsey/composer-install@v2
+                uses: ramsey/composer-install@v4
                 with:
                     dependency-versions: 'highest'
                     composer-options: '--no-scripts'

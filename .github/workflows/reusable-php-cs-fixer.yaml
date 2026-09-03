@@ -57,7 +57,7 @@ jobs:
                     php-version: ${{ inputs.php_version }}
 
             -   name: Checkout Repository
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7
                 with:
                     ref: ${{ inputs.head_ref }}
                     repository: ${{ inputs.repository }}
@@ -65,7 +65,7 @@ jobs:
                     fetch-depth: ${{ inputs.fork_point != '' && '0' || '1' }}
 
             -   name: Checkout global config
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7
                 if: inputs.use_global_config
                 with:
                     repository: open-dxp/workflows-collection-public

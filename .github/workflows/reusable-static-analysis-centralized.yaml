@@ -101,7 +101,7 @@ jobs:
 
         steps:
             -   name: Checkout Code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7
 
             -   name: Configure Git for PAT
                 run: |
@@ -163,7 +163,7 @@ jobs:
                     composer require $(cat composer.json | jq .suggest | jq -r 'to_entries | map("\(.key):\(.value)") | join(" ")') -W --no-progress --no-update
 
             -   name: Install dependencies with Composer
-                uses: ramsey/composer-install@v3
+                uses: ramsey/composer-install@v4
                 env:
                     COMPOSER_ROOT_VERSION: ${{ inputs.composer_root_version || '' }}
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
