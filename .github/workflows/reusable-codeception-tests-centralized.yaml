@@ -253,7 +253,13 @@ jobs:
             -   name: Setup Symfony Server
                 if: inputs.enable_symfony_server
                 run: |
-                    curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir=$HOME/.symfony/bin
+                    # The installer fetches the binary from GitHub's release download, which answers
+                    # with a 5xx often enough to take whole jobs down with it.
+                    for try in 1 2 3; do
+                        curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir=$HOME/.symfony/bin && break
+                        echo "symfony-cli install failed, attempt ${try} of 3"
+                        sleep 15
+                    done
                     ~/.symfony/bin/symfony server:start --port=8080 --dir=public --allow-http --no-tls --daemon
 
             -   name: Set Symfony version constraint in composer.json
