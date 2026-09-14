@@ -229,6 +229,10 @@ jobs:
                     cp .github/ci/files/.my.cnf ~/.my.cnf
                     mysql -e "SET GLOBAL max_connections=1000;"
                     mysql -e "SET GLOBAL max_allowed_packet=32505856;"
+                    # This database is gone when the job ends, so it does not need to survive a
+                    # crash. On its defaults MySQL waits for the disk twice per commit.
+                    mysql -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2;" || true
+                    mysql -e "SET GLOBAL sync_binlog = 0;" || true
 
             -   name: Setup Database
                 run: |
