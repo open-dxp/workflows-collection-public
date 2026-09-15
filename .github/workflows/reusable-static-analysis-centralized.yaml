@@ -77,6 +77,9 @@ jobs:
         name: Static analysis with phpstan
         runs-on: ubuntu-latest
         continue-on-error: ${{ inputs.experimental == true }}
+        concurrency:
+            group: static-analysis-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
+            cancel-in-progress: true
         env:
             OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=mariadb-10.7.0"
             OPENDXP_PROJECT_ROOT: ${{ github.workspace }}

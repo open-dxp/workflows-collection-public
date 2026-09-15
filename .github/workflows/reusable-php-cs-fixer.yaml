@@ -125,6 +125,6 @@ jobs:
             -   uses: stefanzweifel/git-auto-commit-action@v5
                 if: inputs.enable_auto_commit
                 with:
-                    commit_message: Apply php-cs-fixer changes
+                    commit_message: "Apply php-cs-fixer changes [skip ci]"
                     commit_user_name: OpenDXP Bot
                     commit_author: OpenDXP Bot <bot@opendxp.io>

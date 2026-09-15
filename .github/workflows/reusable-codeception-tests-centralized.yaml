@@ -138,6 +138,9 @@ jobs:
         name: Codeception tests
         runs-on: ubuntu-latest
         continue-on-error: ${{ inputs.experimental == true }}
+        concurrency:
+            group: codeception-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.database }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
+            cancel-in-progress: true
         env:
             SYMFONY_DEPRECATIONS_HELPER: "weak"
             OPENDXP_TEST_DB_DSN: "mysql://root@127.0.0.1:33006/opendxp_test?serverVersion=${{ inputs.server_version }}"
