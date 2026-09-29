@@ -62,11 +62,15 @@ runs:
                     composer config --no-plugins "allow-plugins.$plugin" true
                 done
 
-                composer config repositories.package path "$package"
-
+                # The first repository composer is told about is the canonical one, and each of
+                # these puts itself in front, so the package goes last and ends up first. Named the
+                # other way round, a registry that also carries this package wins and the run tests
+                # the release instead of the checkout.
                 if [ -n '${{ inputs.composer_repository }}' ]; then
                     composer config repositories.private composer '${{ inputs.composer_repository }}'
                 fi
+
+                composer config repositories.package path "$package"
 
                 # composer config does not reach autoload.
                 jq --argjson tests "$(jq -c '."autoload-dev"."psr-4"' "$package/composer.json")" \
