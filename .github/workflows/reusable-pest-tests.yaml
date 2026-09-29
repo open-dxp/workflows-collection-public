@@ -1,10 +1,5 @@
 name: Pest tests
 
-# Runs a package's Pest suite inside an OpenDXP application built around it.
-#
-# The application is not in the repository. open-dxp/test-foundation ships it, the same one the
-# testkit builds locally, so a package holds nothing but its tests.
-
 on:
     workflow_call:
         inputs:
