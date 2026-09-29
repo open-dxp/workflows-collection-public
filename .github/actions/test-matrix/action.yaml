@@ -1,0 +1,54 @@
+name: Test matrix
+description: Picks the matrix that matches the php versions a package supports.
+
+inputs:
+    configuration:
+        description: Which matrix configuration to read, by the directory it lives in.
+        required: true
+    manifest:
+        description: The composer.json to read the supported php versions from.
+        required: false
+        default: composer.json
+
+outputs:
+    matrix:
+        description: The matrix, ready to hand to a strategy.
+        value: ${{ steps.pick.outputs.matrix }}
+
+runs:
+    using: composite
+    steps:
+        -   id: pick
+            shell: bash
+            run: |
+                set -eu
+
+                manifest='${{ inputs.manifest }}'
+
+                if [ ! -f "$manifest" ]; then
+                    echo "There is no $manifest to read the php versions from." >&2
+                    exit 1
+                fi
+
+                versions=$(jq -r '.require.php // ""' "$manifest" | grep -oP '\d+\.\d+' | paste -sd, -)
+                : "${versions:=default}"
+
+                configuration="$GITHUB_ACTION_PATH/../../../${{ inputs.configuration }}/matrix-config.json"
+
+                if [ ! -f "$configuration" ]; then
+                    echo "There is no matrix configuration named ${{ inputs.configuration }}." >&2
+                    exit 1
+                fi
+
+                matrix=$(jq -c --arg versions "$versions" \
+                    '{matrix: [.configs[] | select(.php_version == $versions) | .matrix[]]}' \
+                    "$configuration")
+
+                # An empty matrix runs nothing and reports success, which reads like a green suite.
+                if [ "$(jq -r '.matrix | length' <<< "$matrix")" -eq 0 ]; then
+                    echo "${{ inputs.configuration }} has no entry for php $versions." >&2
+                    exit 1
+                fi
+
+                echo "php $versions -> $(jq -r '.matrix | length' <<< "$matrix") runs"
+                echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
