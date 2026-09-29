@@ -194,8 +194,11 @@ jobs:
 
             -   name: Install the browser
                 if: inputs.enable_browser
+                working-directory: application
                 run: |
-                    npx --yes playwright@1 install --with-deps chromium
+                    # This installs the node module the php bridge talks to as well, which a bare
+                    # `npx playwright install` does not.
+                    vendor/bin/playwright-install --with-deps chromium
 
             -   name: Run Pest
                 working-directory: application

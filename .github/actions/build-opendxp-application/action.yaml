@@ -106,6 +106,17 @@ runs:
             run: |
                 set -eu
 
+                # The installer and the console boot a kernel, and neither of them reads
+                # phpunit.xml, where the package says which one.
+                kernel=$(grep -oP '(?<=name="KERNEL_CLASS" value=")[^"]+' phpunit.xml)
+
+                if [ -z "$kernel" ]; then
+                    echo 'phpunit.xml names no KERNEL_CLASS.' >&2
+                    exit 1
+                fi
+
+                export KERNEL_CLASS="$kernel" OPENDXP_KERNEL_CLASS="$kernel"
+
                 OPENDXP_PROJECT_ROOT="$PWD" vendor/bin/opendxp-install \
                     --mysql-host-socket='${{ inputs.database_host }}' \
                     --mysql-port='${{ inputs.database_port }}' \
