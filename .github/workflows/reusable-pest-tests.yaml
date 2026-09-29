@@ -198,9 +198,14 @@ jobs:
             -   name: Run Pest
                 working-directory: application
                 run: |
-                    vendor/bin/pest --log-junit var/report/pest.junit.xml \
-                        ${{ inputs.enable_browser && '' || '--exclude-group=browser' }} \
-                        ${{ inputs.pest_options }}
+                    # Written out rather than chosen in an expression: there an empty string is
+                    # false, so `enable_browser && '' || '--exclude-group=browser'` excluded the
+                    # group even when a browser was asked for.
+                    if [ '${{ inputs.enable_browser }}' != 'true' ]; then
+                        set -- --exclude-group=browser
+                    fi
+
+                    vendor/bin/pest --log-junit var/report/pest.junit.xml "$@" ${{ inputs.pest_options }}
 
             -   name: Log Output
                 uses: actions/upload-artifact@v4
