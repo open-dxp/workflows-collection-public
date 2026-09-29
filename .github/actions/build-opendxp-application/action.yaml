@@ -100,14 +100,9 @@ runs:
                 chmod 755 bin/console
                 mkdir -p public var/cache var/log var/report
 
-        -   name: Install OpenDXP
-            shell: bash
-            working-directory: ${{ inputs.application }}
-            run: |
-                set -eu
-
-                # The installer and the console boot a kernel, and neither of them reads
-                # phpunit.xml, where the package says which one.
+                # The application reads its configuration through Symfony's Dotenv, and that is
+                # also what puts a variable into $_ENV. An exported one only reaches $_SERVER, and
+                # OpenDXP looks the kernel up in $_ENV.
                 kernel=$(grep -oP '(?<=name="KERNEL_CLASS" value=")[^"]+' phpunit.xml)
 
                 if [ -z "$kernel" ]; then
@@ -115,7 +110,30 @@ runs:
                     exit 1
                 fi
 
-                export KERNEL_CLASS="$kernel" OPENDXP_KERNEL_CLASS="$kernel"
+                # .env.dist is where the template says what the application reads. Each of those
+                # takes the value this job carries, or keeps the default the template gives it.
+                {
+                    while IFS= read -r line; do
+                        name=${line%%=*}
+
+                        case "$name" in '' | '#'*) continue ;; esac
+
+                        if [ -n "${!name+is set}" ]; then
+                            printf '%s=%s\n' "$name" "${!name}"
+                        else
+                            printf '%s\n' "$line"
+                        fi
+                    done < .env.dist
+
+                    printf 'KERNEL_CLASS=%s\n' "$kernel"
+                    printf 'OPENDXP_KERNEL_CLASS=%s\n' "$kernel"
+                } > .env
+
+        -   name: Install OpenDXP
+            shell: bash
+            working-directory: ${{ inputs.application }}
+            run: |
+                set -eu
 
                 OPENDXP_PROJECT_ROOT="$PWD" vendor/bin/opendxp-install \
                     --mysql-host-socket='${{ inputs.database_host }}' \
