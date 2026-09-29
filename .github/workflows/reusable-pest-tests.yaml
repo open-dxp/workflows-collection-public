@@ -29,8 +29,8 @@ on:
             opendxp_version:
                 required: false
                 type: string
-            composer_repositories:
-                description: Repositories to offer composer besides packagist, as a json object keyed by name.
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
                 required: false
                 type: string
             enable_opensearch_service:
@@ -85,9 +85,6 @@ jobs:
             cancel-in-progress: true
 
         env:
-            # The package is checked out here. The application is built beside it.
-            PACKAGE: ${{ github.workspace }}/package
-            APPLICATION: ${{ github.workspace }}/application
             PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright
             APP_ENV: test
             APP_DEBUG: '1'
@@ -133,8 +130,6 @@ jobs:
         steps:
             -   name: Checkout the package
                 uses: actions/checkout@v7
-                with:
-                    path: package
 
             -   name: Configure Git for PAT
                 run: |
@@ -142,7 +137,7 @@ jobs:
 
             -   name: Run Post Checkout Action
                 if: inputs.execute_post_checkout_action
-                uses: ./package/.github/actions/post-checkout-action
+                uses: ./.github/actions/post-checkout-action
                 with:
                     cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
@@ -174,7 +169,7 @@ jobs:
                 uses: actions/cache@v4
                 with:
                     path: ~/.cache/composer
-                    key: composer-${{ inputs.php_version }}-${{ hashFiles('package/composer.json') }}
+                    key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
                     restore-keys: composer-${{ inputs.php_version }}-
 
             -   name: Build the application
@@ -183,7 +178,7 @@ jobs:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
                     opendxp_version: ${{ inputs.opendxp_version }}
-                    composer_repositories: ${{ inputs.composer_repositories }}
+                    composer_repository: ${{ inputs.composer_repository }}
 
             -   name: Cache the browser
                 if: inputs.enable_browser

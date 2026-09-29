@@ -21,8 +21,8 @@ on:
             opendxp_version:
                 required: false
                 type: string
-            composer_repositories:
-                description: Repositories to offer composer besides packagist, as a json object keyed by name.
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
                 required: false
                 type: string
             generate_baseline:
@@ -82,8 +82,6 @@ jobs:
         steps:
             -   name: Checkout the package
                 uses: actions/checkout@v7
-                with:
-                    path: package
 
             -   name: Configure Git for PAT
                 run: |
@@ -91,7 +89,7 @@ jobs:
 
             -   name: Run Post Checkout Action
                 if: inputs.execute_post_checkout_action
-                uses: ./package/.github/actions/post-checkout-action
+                uses: ./.github/actions/post-checkout-action
                 with:
                     cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
 
@@ -116,7 +114,7 @@ jobs:
                 uses: actions/cache@v4
                 with:
                     path: ~/.cache/composer
-                    key: composer-${{ inputs.php_version }}-${{ hashFiles('package/composer.json') }}
+                    key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
                     restore-keys: composer-${{ inputs.php_version }}-
 
             -   name: Build the application
@@ -125,13 +123,13 @@ jobs:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
                     opendxp_version: ${{ inputs.opendxp_version }}
-                    composer_repositories: ${{ inputs.composer_repositories }}
+                    composer_repository: ${{ inputs.composer_repository }}
 
             -   name: Run phpstan
                 id: phpstan
                 working-directory: application
                 run: |
-                    package="vendor/$(jq -r .name ../package/composer.json)"
+                    package="vendor/$(jq -r .name ../composer.json)"
                     echo "package=$package" >> $GITHUB_OUTPUT
                     # The sources are named here on purpose. Without them phpstan reads no files
                     # and still reports success.

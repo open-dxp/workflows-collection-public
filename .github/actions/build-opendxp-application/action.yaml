@@ -5,7 +5,7 @@ inputs:
     package:
         description: Where the package under test is checked out.
         required: false
-        default: package
+        default: .
     application:
         description: Where to build the application.
         required: false
@@ -13,12 +13,10 @@ inputs:
     opendxp_version:
         description: A version of open-dxp/opendxp to force, instead of the one the package asks for.
         required: false
-    composer_repositories:
-        description: |
-            Repositories to offer composer besides packagist, as a json object keyed by name. The
-            package is a path repository here, and composer reads the repositories of the root
-            manifest only, so a package that needs one says so through this.
+    composer_repository:
+        description: A composer repository to offer besides packagist, as a url.
         required: false
+        default: ''
     database_host:
         description: The host the database service answers on.
         required: false
@@ -66,10 +64,8 @@ runs:
 
                 composer config repositories.package path "$package"
 
-                if [ -n '${{ inputs.composer_repositories }}' ]; then
-                    jq --argjson extra '${{ inputs.composer_repositories }}' \
-                        '.repositories += $extra' composer.json > composer.next
-                    mv composer.next composer.json
+                if [ -n '${{ inputs.composer_repository }}' ]; then
+                    composer config repositories.private composer '${{ inputs.composer_repository }}'
                 fi
 
                 # composer config does not reach autoload.
@@ -84,6 +80,12 @@ runs:
                 while read -r dev; do
                     require+=("$dev:*")
                 done < <(jq -r '(."require-dev" // {}) | keys[] | select(. != "open-dxp/test-foundation")' "$package/composer.json")
+
+                # What the package names under extra.opendxp-test.optional is optional for whoever
+                # installs the package and necessary for its tests, so it goes in the same way.
+                while read -r optional; do
+                    require+=("$optional:*")
+                done < <(jq -r '(.extra."opendxp-test".optional // [])[]' "$package/composer.json")
 
                 if [ -n "${{ inputs.opendxp_version }}" ]; then
                     require+=("open-dxp/opendxp:${{ inputs.opendxp_version }}")
