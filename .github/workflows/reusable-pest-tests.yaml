@@ -1,0 +1,273 @@
+name: Pest tests
+
+on:
+    workflow_call:
+        inputs:
+            php_version:
+                required: true
+                type: string
+            database:
+                required: false
+                type: string
+                default: 'mysql:8.4'
+            server_version:
+                required: true
+                type: string
+            dependencies:
+                required: false
+                type: string
+                default: 'locked'
+            experimental:
+                required: false
+                type: boolean
+                default: false
+            # A browser costs a chromium download and seconds per test, and most suites need none.
+            enable_browser:
+                required: false
+                type: boolean
+                default: false
+            opendxp_version:
+                required: false
+                type: string
+            enable_opensearch_service:
+                required: false
+                type: boolean
+                default: false
+            opendxp_opensearch_version:
+                required: false
+                type: string
+                default: '2'
+            opendxp_open_search_host:
+                required: false
+                type: string
+                default: '39200'
+            enable_redis_service:
+                required: false
+                type: boolean
+                default: false
+            redis_dsn:
+                required: false
+                type: string
+                default: 'redis://127.0.0.1:63379'
+            install_ghostscript_and_pdfinfo:
+                required: false
+                type: boolean
+                default: false
+            pest_options:
+                required: false
+                type: string
+            execute_post_checkout_action:
+                required: false
+                type: boolean
+                default: false
+
+        secrets:
+            CLA_ACTION_ACCESS_TOKEN:
+                required: false
+            COMPOSER_AUTH:
+                required: false
+            OPENDXP_INSTANCE_IDENTIFIER:
+                required: false
+            OPENDXP_ENCRYPTION_SECRET:
+                required: false
+
+jobs:
+    pest-tests:
+        name: Pest tests
+        runs-on: ubuntu-latest
+        continue-on-error: ${{ inputs.experimental == true }}
+        concurrency:
+            group: pest-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.database }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
+            cancel-in-progress: true
+
+        env:
+            # The package is checked out here, the application is built beside it.
+            PACKAGE: ${{ github.workspace }}/package
+            APPLICATION: ${{ github.workspace }}/application
+            PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright
+            APP_ENV: test
+            APP_DEBUG: '1'
+            APP_SECRET: test
+            DATABASE_URL: "mysql://root@127.0.0.1:33006/opendxp_test"
+            DATABASE_SERVER_VERSION: ${{ inputs.server_version }}
+            TEST_TIMEZONE: 'Europe/Zurich'
+            TEST_DOMAIN: 'opendxp.test'
+            OPENDXP_TEST_REDIS_DSN: ${{ inputs.redis_dsn }}
+            OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
+            OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
+            OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_ENCRYPTION_SECRET }}
+            SYMFONY_DEPRECATIONS_HELPER: "weak"
+
+        services:
+            database:
+                image: ${{ inputs.database }}
+                ports:
+                    - 33006:3306
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=12
+                    --health-start-period=30s
+                env:
+                    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+
+            opensearch:
+                image: ${{ inputs.enable_opensearch_service == true && format('opensearchproject/opensearch:{0}', inputs.opendxp_opensearch_version) || '' }}
+                ports:
+                    - ${{ inputs.opendxp_open_search_host }}:9200
+                env:
+                    discovery.type: "single-node"
+                    DISABLE_SECURITY_PLUGIN: true
+                    OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+
+            redis:
+                image: ${{ inputs.enable_redis_service == true && 'redis' || '' }}
+                ports:
+                    - 63379:6379
+
+        steps:
+            -   name: Checkout the package
+                uses: actions/checkout@v7
+                with:
+                    path: package
+
+            -   name: Configure Git for PAT
+                run: |
+                    git config --global url."https://x-access-token:${{ secrets.CLA_ACTION_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            -   name: Run Post Checkout Action
+                if: inputs.execute_post_checkout_action
+                uses: ./package/.github/actions/post-checkout-action
+                with:
+                    cla_action_access_token: ${{ secrets.CLA_ACTION_ACCESS_TOKEN }}
+
+            -   name: Install PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    coverage: none
+                    extensions: imagick, intl
+                    ini-values: display_errors=On, display_startup_errors=On, error_reporting=32767
+                    php-version: ${{ inputs.php_version }}
+
+            -   name: Install Ghostscript and PDFInfo
+                if: inputs.install_ghostscript_and_pdfinfo
+                run: |
+                    sudo apt-get update --allow-releaseinfo-change
+                    sudo apt-get install -y ghostscript poppler-utils
+
+            -   name: Tune the database
+                run: |
+                    mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL max_connections=1000;"
+                    mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL max_allowed_packet=32505856;"
+                    # This database is gone when the job ends, so it does not need to survive a
+                    # crash. On its defaults MySQL waits for the disk twice per commit.
+                    mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL innodb_flush_log_at_trx_commit=2;" || true
+                    mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL sync_binlog=0;" || true
+                    mysql -h 127.0.0.1 -P 33006 -u root -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
+
+            -   name: Cache the composer downloads
+                uses: actions/cache@v4
+                with:
+                    path: ~/.cache/composer
+                    key: composer-${{ inputs.php_version }}-${{ hashFiles('package/composer.json') }}
+                    restore-keys: composer-${{ inputs.php_version }}-
+
+            -   name: Build the application around the package
+                env:
+                    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                run: |
+                    set -eu
+
+                    name=$(jq -r .name "$PACKAGE/composer.json")
+                    foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // "1.x-dev"' "$PACKAGE/composer.json")
+
+                    mkdir -p "$APPLICATION"
+                    cd "$APPLICATION"
+
+                    composer init --quiet --no-interaction --name=open-dxp/ci --type=project
+                    composer config minimum-stability dev
+                    composer config prefer-stable true
+                    composer config sort-packages true
+                    for plugin in 'open-dxp/*' php-http/discovery symfony/flex symfony/runtime pestphp/pest-plugin; do
+                        composer config --no-plugins "allow-plugins.$plugin" true
+                    done
+
+                    composer config repositories.package path "$PACKAGE"
+
+                    # composer config does not reach autoload, so this one goes in by hand.
+                    jq --argjson tests "$(jq -c '."autoload-dev"."psr-4"' "$PACKAGE/composer.json")" \
+                        '."autoload-dev"."psr-4" = $tests' composer.json > composer.next
+                    mv composer.next composer.json
+
+                    require=("$name:*@dev" "open-dxp/test-foundation:$foundation")
+
+                    if [ -n "${{ inputs.opendxp_version }}" ]; then
+                        require+=("open-dxp/opendxp:${{ inputs.opendxp_version }}")
+                    fi
+
+                    composer require --no-interaction --no-progress --no-scripts "${require[@]}"
+
+                    cp -r vendor/open-dxp/test-foundation/app/. .
+                    cp "$PACKAGE/phpunit.xml.dist" phpunit.xml
+
+                    # Pest names a test after its path below the application, and the package is a
+                    # symlink there, so the tests are copied rather than reached through it.
+                    cp -r "$PACKAGE/tests" tests
+                    chmod 755 bin/console
+                    mkdir -p public var/cache var/log
+
+            -   name: Install OpenDXP
+                working-directory: application
+                run: |
+                    set -eu
+
+                    OPENDXP_PROJECT_ROOT="$APPLICATION" vendor/bin/opendxp-install \
+                        --mysql-host-socket=127.0.0.1 --mysql-port=33006 --mysql-username=root \
+                        --mysql-password= --mysql-database=opendxp_test \
+                        --admin-username=admin --admin-password=testtesttest \
+                        --skip-database-config --no-interaction
+
+                    bin/console doctrine:migrations:sync-metadata-storage -q
+
+                    # A bundle that is enabled but not installed creates its tables the first time
+                    # something asks for them. That happens inside a test, and the DDL commits the
+                    # transaction the tests rely on for isolation.
+                    bin/console opendxp:bundle:list --no-ansi \
+                        | awk -F'|' '$2 ~ /OpenDxp/ && $3 ~ /yes/ && $4 ~ /no/ && $5 ~ /yes/ { gsub(/ /, "", $2); print $2 }' \
+                        | xargs -r -n1 bin/console opendxp:bundle:install -q
+
+                    if compgen -G "var/classes/definition_*.php" > /dev/null; then
+                        bin/console opendxp:deployment:classes-rebuild --create-classes -n -q
+                    fi
+
+                    bin/console assets:install public -q
+
+            -   name: Cache the browser
+                if: inputs.enable_browser
+                uses: actions/cache@v4
+                with:
+                    path: ${{ github.workspace }}/.playwright
+                    key: playwright-${{ runner.os }}
+
+            -   name: Install the browser
+                if: inputs.enable_browser
+                run: |
+                    npx --yes playwright@1 install --with-deps chromium
+
+            -   name: Run Pest
+                working-directory: application
+                run: |
+                    vendor/bin/pest --log-junit var/report/pest.junit.xml \
+                        ${{ inputs.enable_browser && '' || '--exclude-group=browser' }} \
+                        ${{ inputs.pest_options }}
+
+            -   name: Log Output
+                uses: actions/upload-artifact@v4
+                if: failure()
+                with:
+                    name: "Logs (PHP ${{ inputs.php_version }}, ${{ inputs.database }})"
+                    if-no-files-found: ignore
+                    path: |
+                        ${{ github.workspace }}/application/var/log/
+                        ${{ github.workspace }}/application/var/report/
