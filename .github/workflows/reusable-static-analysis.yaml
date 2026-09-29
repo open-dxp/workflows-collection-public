@@ -11,13 +11,18 @@ on:
                 type: string
                 default: 'mysql:8.4'
             server_version:
-                required: true
+                required: false
                 type: string
+                default: '8.4'
             experimental:
                 required: false
                 type: boolean
                 default: false
             opendxp_version:
+                required: false
+                type: string
+            composer_repositories:
+                description: Repositories to offer composer besides packagist, as a json object keyed by name.
                 required: false
                 type: string
             generate_baseline:
@@ -120,6 +125,7 @@ jobs:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
                     opendxp_version: ${{ inputs.opendxp_version }}
+                    composer_repositories: ${{ inputs.composer_repositories }}
 
             -   name: Run phpstan
                 id: phpstan

@@ -13,6 +13,12 @@ inputs:
     opendxp_version:
         description: A version of open-dxp/opendxp to force, instead of the one the package asks for.
         required: false
+    composer_repositories:
+        description: |
+            Repositories to offer composer besides packagist, as a json object keyed by name. The
+            package is a path repository here, and composer reads the repositories of the root
+            manifest only, so a package that needs one says so through this.
+        required: false
     database_host:
         description: The host the database service answers on.
         required: false
@@ -59,6 +65,12 @@ runs:
                 done
 
                 composer config repositories.package path "$package"
+
+                if [ -n '${{ inputs.composer_repositories }}' ]; then
+                    jq --argjson extra '${{ inputs.composer_repositories }}' \
+                        '.repositories += $extra' composer.json > composer.next
+                    mv composer.next composer.json
+                fi
 
                 # composer config does not reach autoload.
                 jq --argjson tests "$(jq -c '."autoload-dev"."psr-4"' "$package/composer.json")" \
