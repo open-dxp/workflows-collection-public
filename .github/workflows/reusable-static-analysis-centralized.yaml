@@ -1,5 +1,8 @@
 name: Static analysis
 
+# DEPRECATED
+# Use reusable-static-analysis.yaml instead. It takes the application from open-dxp/test-foundation
+
 on:
     workflow_call:
         inputs:

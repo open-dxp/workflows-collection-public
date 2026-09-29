@@ -1,0 +1,119 @@
+name: Build an OpenDXP application
+description: Builds an installed OpenDXP application around a package, so its tests and its static analysis have somewhere to run.
+
+inputs:
+    package:
+        description: Where the package under test is checked out.
+        required: false
+        default: package
+    application:
+        description: Where to build the application.
+        required: false
+        default: application
+    opendxp_version:
+        description: A version of open-dxp/opendxp to force, instead of the one the package asks for.
+        required: false
+    database_host:
+        description: The host the database service answers on.
+        required: false
+        default: '127.0.0.1'
+    database_port:
+        description: The port the database service answers on.
+        required: false
+        default: '33006'
+    database_user:
+        description: A user that may create the schema.
+        required: false
+        default: root
+    database_password:
+        description: That user's password. Empty is what a service container gives you.
+        required: false
+        default: ''
+    database_name:
+        description: The database to install into. It has to exist already.
+        required: false
+        default: opendxp_test
+
+runs:
+    using: composite
+    steps:
+        -   name: Build the application around the package
+            shell: bash
+            run: |
+                set -eu
+
+                package=$(cd "${{ inputs.package }}" && pwd)
+                name=$(jq -r .name "$package/composer.json")
+                foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // "1.x-dev"' "$package/composer.json")
+
+                mkdir -p "${{ inputs.application }}"
+                cd "${{ inputs.application }}"
+
+                composer init --quiet --no-interaction --name=open-dxp/ci --type=project
+                composer config minimum-stability dev
+                composer config prefer-stable true
+                composer config sort-packages true
+
+                for plugin in 'open-dxp/*' php-http/discovery symfony/flex symfony/runtime pestphp/pest-plugin; do
+                    composer config --no-plugins "allow-plugins.$plugin" true
+                done
+
+                composer config repositories.package path "$package"
+
+                # composer config does not reach autoload.
+                jq --argjson tests "$(jq -c '."autoload-dev"."psr-4"' "$package/composer.json")" \
+                    '."autoload-dev"."psr-4" = $tests' composer.json > composer.next
+                mv composer.next composer.json
+
+                require=("$name:*@dev" "open-dxp/test-foundation:$foundation")
+
+                # Composer never installs the require-dev of a dependency. This package is under
+                # test, so its development dependencies go in too.
+                while read -r dev; do
+                    require+=("$dev:*")
+                done < <(jq -r '(."require-dev" // {}) | keys[] | select(. != "open-dxp/test-foundation")' "$package/composer.json")
+
+                if [ -n "${{ inputs.opendxp_version }}" ]; then
+                    require+=("open-dxp/opendxp:${{ inputs.opendxp_version }}")
+                fi
+
+                composer require --no-interaction --no-progress --no-scripts "${require[@]}"
+
+                cp -r vendor/open-dxp/test-foundation/app/. .
+                cp "$package/phpunit.xml.dist" phpunit.xml
+
+                # Pest names a test after its path below the application, and composer links the
+                # package into vendor, so the tests are copied instead.
+                cp -r "$package/tests" tests
+                chmod 755 bin/console
+                mkdir -p public var/cache var/log var/report
+
+        -   name: Install OpenDXP
+            shell: bash
+            working-directory: ${{ inputs.application }}
+            run: |
+                set -eu
+
+                OPENDXP_PROJECT_ROOT="$PWD" vendor/bin/opendxp-install \
+                    --mysql-host-socket='${{ inputs.database_host }}' \
+                    --mysql-port='${{ inputs.database_port }}' \
+                    --mysql-username='${{ inputs.database_user }}' \
+                    --mysql-password='${{ inputs.database_password }}' \
+                    --mysql-database='${{ inputs.database_name }}' \
+                    --admin-username=admin --admin-password=testtesttest \
+                    --skip-database-config --no-interaction
+
+                bin/console doctrine:migrations:sync-metadata-storage -q
+
+                # A bundle that is enabled but not installed creates its tables the first time
+                # something asks for them. Inside a test that DDL ends the transaction, and the
+                # isolation with it.
+                bin/console opendxp:bundle:list --no-ansi \
+                    | awk -F'|' '$2 ~ /OpenDxp/ && $3 ~ /yes/ && $4 ~ /no/ && $5 ~ /yes/ { gsub(/ /, "", $2); print $2 }' \
+                    | xargs -r -n1 bin/console opendxp:bundle:install -q
+
+                if compgen -G "var/classes/definition_*.php" > /dev/null; then
+                    bin/console opendxp:deployment:classes-rebuild --create-classes -n -q
+                fi
+
+                bin/console assets:install public -q

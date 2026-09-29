@@ -1,9 +1,4 @@
-name: Pest tests
-
-# Runs a package's Pest suite inside an OpenDXP application built around it.
-#
-# The application is not in the repository. open-dxp/test-foundation ships it, the same one the
-# testkit builds locally, so a package holds nothing but its tests.
+name: Static analysis
 
 on:
     workflow_call:
@@ -18,49 +13,18 @@ on:
             server_version:
                 required: true
                 type: string
-            dependencies:
-                required: false
-                type: string
-                default: 'locked'
             experimental:
-                required: false
-                type: boolean
-                default: false
-            # Most suites need no browser, and downloading chromium costs about a minute per job.
-            enable_browser:
                 required: false
                 type: boolean
                 default: false
             opendxp_version:
                 required: false
                 type: string
-            enable_opensearch_service:
+            generate_baseline:
+                description: On a failure, attach a baseline of everything found.
                 required: false
                 type: boolean
                 default: false
-            opendxp_opensearch_version:
-                required: false
-                type: string
-                default: '2'
-            opendxp_open_search_host:
-                required: false
-                type: string
-                default: '39200'
-            enable_redis_service:
-                required: false
-                type: boolean
-                default: false
-            redis_dsn:
-                required: false
-                type: string
-                default: 'redis://127.0.0.1:63379'
-            install_ghostscript_and_pdfinfo:
-                required: false
-                type: boolean
-                default: false
-            pest_options:
-                required: false
-                type: string
             execute_post_checkout_action:
                 required: false
                 type: boolean
@@ -77,19 +41,15 @@ on:
                 required: false
 
 jobs:
-    pest-tests:
-        name: Pest tests
+    static-analysis:
+        name: Static analysis
         runs-on: ubuntu-latest
         continue-on-error: ${{ inputs.experimental == true }}
         concurrency:
-            group: pest-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.database }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
+            group: static-analysis-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.opendxp_version }}
             cancel-in-progress: true
 
         env:
-            # The package is checked out here. The application is built beside it.
-            PACKAGE: ${{ github.workspace }}/package
-            APPLICATION: ${{ github.workspace }}/application
-            PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright
             APP_ENV: test
             APP_DEBUG: '1'
             APP_SECRET: test
@@ -97,11 +57,8 @@ jobs:
             DATABASE_SERVER_VERSION: ${{ inputs.server_version }}
             TEST_TIMEZONE: 'Europe/Zurich'
             TEST_DOMAIN: 'opendxp.test'
-            OPENDXP_TEST_REDIS_DSN: ${{ inputs.redis_dsn }}
-            OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
             OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_ENCRYPTION_SECRET }}
-            SYMFONY_DEPRECATIONS_HELPER: "weak"
 
         services:
             database:
@@ -116,20 +73,6 @@ jobs:
                     --health-start-period=30s
                 env:
                     MYSQL_ALLOW_EMPTY_PASSWORD: yes
-
-            opensearch:
-                image: ${{ inputs.enable_opensearch_service == true && format('opensearchproject/opensearch:{0}', inputs.opendxp_opensearch_version) || '' }}
-                ports:
-                    - ${{ inputs.opendxp_open_search_host }}:9200
-                env:
-                    discovery.type: "single-node"
-                    DISABLE_SECURITY_PLUGIN: true
-                    OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
-
-            redis:
-                image: ${{ inputs.enable_redis_service == true && 'redis' || '' }}
-                ports:
-                    - 63379:6379
 
         steps:
             -   name: Checkout the package
@@ -155,15 +98,8 @@ jobs:
                     ini-values: display_errors=On, display_startup_errors=On, error_reporting=32767
                     php-version: ${{ inputs.php_version }}
 
-            -   name: Install Ghostscript and PDFInfo
-                if: inputs.install_ghostscript_and_pdfinfo
+            -   name: Prepare the database
                 run: |
-                    sudo apt-get update --allow-releaseinfo-change
-                    sudo apt-get install -y ghostscript poppler-utils
-
-            -   name: Tune the database
-                run: |
-                    mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL max_connections=1000;"
                     mysql -h 127.0.0.1 -P 33006 -u root -e "SET GLOBAL max_allowed_packet=32505856;"
                     # This database is gone when the job ends, so it does not need to survive
                     # a crash. By default MySQL waits for the disk twice per commit.
@@ -185,31 +121,28 @@ jobs:
                 with:
                     opendxp_version: ${{ inputs.opendxp_version }}
 
-            -   name: Cache the browser
-                if: inputs.enable_browser
-                uses: actions/cache@v4
-                with:
-                    path: ${{ github.workspace }}/.playwright
-                    key: playwright-${{ runner.os }}
-
-            -   name: Install the browser
-                if: inputs.enable_browser
-                run: |
-                    npx --yes playwright@1 install --with-deps chromium
-
-            -   name: Run Pest
+            -   name: Run phpstan
+                id: phpstan
                 working-directory: application
                 run: |
-                    vendor/bin/pest --log-junit var/report/pest.junit.xml \
-                        ${{ inputs.enable_browser && '' || '--exclude-group=browser' }} \
-                        ${{ inputs.pest_options }}
+                    package="vendor/$(jq -r .name ../package/composer.json)"
+                    echo "package=$package" >> $GITHUB_OUTPUT
+                    # The sources are named here on purpose. Without them phpstan reads no files
+                    # and still reports success.
+                    vendor/bin/phpstan analyse --memory-limit=-1 -c "$package/phpstan.neon" "$package/src"
 
-            -   name: Log Output
+            -   name: Generate a baseline
+                if: failure() && inputs.generate_baseline
+                working-directory: application
+                run: |
+                    package="${{ steps.phpstan.outputs.package }}"
+                    vendor/bin/phpstan analyse --memory-limit=-1 -c "$package/phpstan.neon" "$package/src" \
+                        --generate-baseline "$GITHUB_WORKSPACE/phpstan-baseline.neon"
+
+            -   name: Attach the baseline
+                if: failure() && inputs.generate_baseline
                 uses: actions/upload-artifact@v4
-                if: failure()
                 with:
-                    name: "Logs (PHP ${{ inputs.php_version }}, ${{ inputs.database }})"
+                    name: "phpstan-baseline (PHP ${{ inputs.php_version }})"
                     if-no-files-found: ignore
-                    path: |
-                        ${{ github.workspace }}/application/var/log/
-                        ${{ github.workspace }}/application/var/report/
+                    path: ${{ github.workspace }}/phpstan-baseline.neon
