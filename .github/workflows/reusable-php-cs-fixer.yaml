@@ -122,7 +122,7 @@ jobs:
                   rm -rf .workflows-collection-public
                   rm -f .php-cs-fixer-global.php .php-cs-fixer-bundle-global.php .php-cs-fixer-ecommerce-bundle-global.php .php-cs-fixer-gal-digital-bundle-global.php .php-cs-fixer-rules-global.php .php-cs-fixer-fork-header-global.php
 
-            -   uses: stefanzweifel/git-auto-commit-action@v5
+            -   uses: stefanzweifel/git-auto-commit-action@v7
                 if: inputs.enable_auto_commit
                 with:
                     commit_message: "Apply php-cs-fixer changes [skip ci]"

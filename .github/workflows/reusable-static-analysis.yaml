@@ -111,7 +111,7 @@ jobs:
                     mysql -h 127.0.0.1 -P 33006 -u root -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
 
             -   name: Cache the composer downloads
-                uses: actions/cache@v4
+                uses: actions/cache@v6
                 with:
                     path: ~/.cache/composer
                     key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
@@ -191,7 +191,7 @@ jobs:
 
             -   name: Attach the baseline
                 if: failure() && inputs.generate_baseline
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 with:
                     name: "phpstan-baseline (PHP ${{ inputs.php_version }})"
                     if-no-files-found: ignore

@@ -166,7 +166,7 @@ jobs:
                     mysql -h 127.0.0.1 -P 33006 -u root -e "CREATE DATABASE opendxp_test CHARSET=utf8mb4;"
 
             -   name: Cache the composer downloads
-                uses: actions/cache@v4
+                uses: actions/cache@v6
                 with:
                     path: ~/.cache/composer
                     key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
@@ -182,7 +182,7 @@ jobs:
 
             -   name: Cache the browser
                 if: inputs.enable_browser
-                uses: actions/cache@v4
+                uses: actions/cache@v6
                 with:
                     path: ${{ github.workspace }}/.playwright
                     key: playwright-${{ runner.os }}
@@ -208,7 +208,7 @@ jobs:
                     vendor/bin/pest --log-junit var/report/pest.junit.xml "$@" ${{ inputs.pest_options }}
 
             -   name: Log Output
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 if: failure()
                 with:
                     name: "Logs (PHP ${{ inputs.php_version }}, ${{ inputs.database }})"
