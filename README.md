@@ -7,20 +7,20 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 
 ## What is here
 
-| Workflow                                  |                                                                |
-|-------------------------------------------|----------------------------------------------------------------|
-| `reusable-pest-tests.yaml`                | a package's Pest suite, in an OpenDXP application built for it |
-| `reusable-static-analysis.yaml`           | phpstan over a package, against the same application           |
-| `reusable-php-cs-fixer.yaml`              | php-cs-fixer, with the fixes committed back                    |
-| `reusable-composer-checks.yaml`           | `composer audit` and `composer outdated`                       |
-| `reusable-composer-vulnerabilities.yaml`  | the installed packages against the advisory database           |
-| `reusable-cla-check.yaml`                 | a contributor has signed the CLA                               |
-| `stale.yml`                               | marks issues nobody has answered for 20 days                   |
+| Workflow                                 |                                                                    |
+|------------------------------------------|--------------------------------------------------------------------|
+| `reusable-pest-tests.yaml`               | runs a package's Pest suite in an OpenDXP application built for it |
+| `reusable-static-analysis.yaml`          | runs phpstan over a package, against the same application          |
+| `reusable-php-cs-fixer.yaml`             | runs php-cs-fixer and commits the fixes                            |
+| `reusable-composer-checks.yaml`          | runs `composer audit` and `composer outdated`                      |
+| `reusable-composer-vulnerabilities.yaml` | checks the installed packages against the advisory database        |
+| `reusable-cla-check.yaml`                | checks that a contributor has signed the CLA                       |
+| `stale.yml`                              | marks issues nobody has answered for 20 days                       |
 
-| Action                      |                                               |
-|-----------------------------|-----------------------------------------------|
-| `build-opendxp-application` | an OpenDXP application with the package in it |
-| `test-matrix`               | a job matrix out of a matrix configuration    |
+| Action                      |                                                      |
+|-----------------------------|------------------------------------------------------|
+| `build-opendxp-application` | builds an OpenDXP application with the package in it |
+| `test-matrix`               | builds a job matrix from a matrix configuration      |
 
 | Configuration                             |                                                           |
 |-------------------------------------------|-----------------------------------------------------------|
@@ -116,8 +116,8 @@ The same shape, with the phpstan matrix:
 ```
 
 phpstan reads the compiled container to know the services, so this builds and installs the same
-application the tests use. It takes longer than a plain phpstan run and it sees what the services
-actually are. Your `phpstan.neon` has to point at the container the test kernel writes, which
+application the tests use. That takes longer than a plain phpstan run, but phpstan sees the real
+services. Your `phpstan.neon` has to point at the container the test kernel writes, which
 [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation) documents.
 
 ## The matrix
@@ -130,37 +130,36 @@ codeception-tests-configuration/matrix-config.json     for test runs
 phpstan-configuration/matrix-config.json               for the analysis
 ```
 
-It fails when nothing matches. An empty matrix runs nothing and reports success,
-which reads like a suite that passed.
+It fails when nothing matches. An empty matrix runs no tests and still reports success, which
+looks like a suite that passed.
 
 ## Options
 
 `reusable-pest-tests.yaml` and `reusable-static-analysis.yaml`:
 
-|                                |                                                            |
-|--------------------------------|------------------------------------------------------------|
-| `php_version`                  | required                                                   |
-| `dependencies`                 | `locked`, `highest` or `lowest`, handed to composer        |
-| `database`                     | `mysql:8.4` by default, an image name                      |
-| `server_version`               | what doctrine is told the server is, paired with the image |
-| `experimental`                 | a failure does not fail the run                            |
-| `opendxp_version`              | a version of `open-dxp/opendxp` to force                   |
-| `composer_repository`          | a composer repository besides packagist, as a url          |
-| `execute_post_checkout_action` | run `.github/actions/post-checkout-action` of your package |
+|                                |                                                                   |
+|--------------------------------|-------------------------------------------------------------------|
+| `php_version`                  | required                                                          |
+| `dependencies`                 | `locked`, `highest` or `lowest`, handed to composer               |
+| `database`                     | `mysql:8.4` by default, an image name                             |
+| `server_version`               | the server version doctrine is configured with, matches the image |
+| `experimental`                 | a failure does not fail the run                                   |
+| `opendxp_version`              | a version of `open-dxp/opendxp` to force                          |
+| `composer_repository`          | a composer repository besides packagist, as a url                 |
+| `execute_post_checkout_action` | run `.github/actions/post-checkout-action` of your package        |
 
 `reusable-pest-tests.yaml` also:
 
 |                                   |                                                      |
 |-----------------------------------|------------------------------------------------------|
 | `enable_browser`                  | run the tests in the `browser` group, off by default |
-| `pest_options`                    | passed to Pest as it stands                          |
+| `pest_options`                    | passed to Pest unchanged                             |
 | `enable_redis_service`            | a redis container beside the application             |
 | `enable_opensearch_service`       | an opensearch container beside the application       |
 | `install_ghostscript_and_pdfinfo` | for suites that read pdfs                            |
 
-The ports and versions of those two containers have defaults that match what the tests read:
-`redis_dsn`, `opendxp_open_search_host` and `opendxp_opensearch_version`.
-Change them only when something in the suite expects something else.
+The defaults for `redis_dsn`, `opendxp_open_search_host` and `opendxp_opensearch_version` match
+what the containers are started with. Change them only if your tests expect other values.
 
 `reusable-static-analysis.yaml` also:
 
@@ -168,8 +167,8 @@ Change them only when something in the suite expects something else.
 |---------------------|-----------------------------------------------------|
 | `generate_baseline` | on a failure, attach a baseline of everything found |
 
-A browser costs a chromium download and seconds per test, so `enable_browser` is off unless you
-ask for it. It then runs the tests marked `->group('browser')` as well.
+Running a browser downloads chromium and costs seconds per test, so `enable_browser` is off by
+default. With it, the tests marked `->group('browser')` run as well.
 
 ## Code style
 
@@ -185,8 +184,9 @@ with:
 ```
 
 `cs_fixer_mode` picks the rule set: `core`, `bundle`.
-A global configuration takes the files to fix from a `.php-cs-fixer-finder.dist.php` in the package, 
-so that part stays with the package. Without `use_global_config` the workflow uses `config_file` as it is.
+The global configurations read the files to fix from `.php-cs-fixer-finder.dist.php` in your
+package, so that file stays with the package. Without `use_global_config` the workflow uses
+`config_file`.
 
 ## Packages from a private registry
 
