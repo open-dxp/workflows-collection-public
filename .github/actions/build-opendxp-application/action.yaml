@@ -155,8 +155,8 @@ runs:
                 # A bundle that is enabled but not installed creates its tables the first time
                 # something asks for them. Inside a test that DDL ends the transaction, and the
                 # isolation with it.
-                bin/console opendxp:bundle:list --no-ansi \
-                    | awk -F'|' '$2 ~ /OpenDxp/ && $3 ~ /yes/ && $4 ~ /no/ && $5 ~ /yes/ { gsub(/ /, "", $2); print $2 }' \
+                bin/console opendxp:bundle:list --json \
+                    | jq -r '.[] | select(.Enabled and .Installable and (.Installed | not)) | .Bundle' \
                     | xargs -r -n1 bin/console opendxp:bundle:install -q
 
                 if compgen -G "var/classes/definition_*.php" > /dev/null; then
