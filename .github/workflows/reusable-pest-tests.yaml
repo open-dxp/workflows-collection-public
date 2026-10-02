@@ -215,7 +215,7 @@ jobs:
                 uses: actions/upload-artifact@v7
                 if: failure()
                 with:
-                    name: "Logs (PHP ${{ inputs.php_version }}, ${{ inputs.database }})"
+                    name: "Logs (PHP ${{ inputs.php_version }}, ${{ inputs.server_version }})"
                     if-no-files-found: ignore
                     path: |
                         ${{ runner.temp }}/application/var/log/
