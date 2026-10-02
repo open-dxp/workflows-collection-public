@@ -156,8 +156,13 @@ jobs:
                     fi
 
                     # The sources are named here on purpose. Without them phpstan reads no files
-                    # and still reports success.
-                    vendor/bin/phpstan analyse -c "$package/phpstan.neon" "$package/src"
+                    # and still reports success. A package that keeps them elsewhere, core among
+                    # them, names them in its own configuration.
+                    if [ -d "$package/src" ]; then
+                        vendor/bin/phpstan analyse -c "$package/phpstan.neon" "$package/src"
+                    else
+                        vendor/bin/phpstan analyse -c "$package/phpstan.neon"
+                    fi
 
             -   name: Run deptrac
                 working-directory: application
