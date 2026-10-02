@@ -82,6 +82,9 @@ jobs:
         steps:
             -   name: Checkout the package
                 uses: actions/checkout@v7
+                with:
+                    # The newest tag decides which version the checkout reports.
+                    fetch-depth: 0
 
             -   name: Configure Git for PAT
                 run: |
