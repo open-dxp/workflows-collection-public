@@ -97,7 +97,6 @@ jobs:
             OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
             OPENDXP_ENCRYPTION_SECRET: ${{ secrets.OPENDXP_ENCRYPTION_SECRET }}
-            SYMFONY_DEPRECATIONS_HELPER: "weak"
 
         services:
             database:
