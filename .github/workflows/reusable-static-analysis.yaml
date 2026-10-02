@@ -125,21 +125,23 @@ jobs:
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                 with:
+                    # Outside the checkout, because composer refuses to link a package into a directory inside itself.
+                    application: ${{ runner.temp }}/application
                     opendxp_version: ${{ inputs.opendxp_version }}
                     composer_repository: ${{ inputs.composer_repository }}
 
             -   name: Locate the package
                 id: package
-                working-directory: application
-                run: echo "path=vendor/$(jq -r .name ../composer.json)" >> $GITHUB_OUTPUT
+                working-directory: ${{ runner.temp }}/application
+                run: echo "path=vendor/$(jq -r .name "$GITHUB_WORKSPACE/composer.json")" >> $GITHUB_OUTPUT
 
             -   name: Analyse the package
-                working-directory: application
+                working-directory: ${{ runner.temp }}/application
                 run: vendor/bin/opendxp-test analyse "${{ steps.package.outputs.path }}"
 
             -   name: Generate a baseline
                 if: failure() && inputs.generate_baseline
-                working-directory: application
+                working-directory: ${{ runner.temp }}/application
                 run: vendor/bin/opendxp-test analyse "${{ steps.package.outputs.path }}" --baseline
 
             -   name: Attach the baseline
