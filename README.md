@@ -90,8 +90,12 @@ jobs:
 
 ### What the package has to have
 
-A `phpunit.xml.dist`, a `tests/TestKernel.php` and `open-dxp/test-foundation` under `require-dev`.
-How to write any of it is in [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation).
+A `phpunit.xml.dist`, a `tests/Application/TestKernel.php` and `open-dxp/test-foundation` under
+`require-dev`. How to write any of it is in [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation).
+
+The application is built with `opendxp-test bundle` and `opendxp-test install` from the test
+foundation, the same commands the OpenDXP testkit runs. A run in CI and a run in the testkit come to
+the same result.
 
 ## Static analysis
 
@@ -115,10 +119,11 @@ The same shape, with the phpstan matrix:
             experimental: ${{ matrix.matrix.experimental }}
 ```
 
-phpstan reads the compiled container to know the services, so this builds and installs the same
-application the tests use. That takes longer than a plain phpstan run, but phpstan sees the real
-services. Your `phpstan.neon` has to point at the container the test kernel writes, which
-[open-dxp/test-foundation](https://github.com/open-dxp/test-foundation) documents.
+The analysis runs `opendxp-test analyse`: lint always, and phpstan, deptrac and phparkitect when the
+package configures them. phpstan reads the compiled container to know the services, so this builds
+and installs the same application the tests use. Your `phpstan.neon` names its paths and points at
+the container the test kernel writes, which [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation)
+documents.
 
 ## The matrix
 

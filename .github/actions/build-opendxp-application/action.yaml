@@ -1,5 +1,5 @@
 name: Build an OpenDXP application
-description: Builds an installed OpenDXP application around a package, so its tests and its static analysis have somewhere to run.
+description: Builds an installed OpenDXP application around a package with the commands of open-dxp/test-foundation, the same way the testkit does.
 
 inputs:
     package:
@@ -47,125 +47,35 @@ runs:
                 set -eu
 
                 package=$(cd "${{ inputs.package }}" && pwd)
-                name=$(jq -r .name "$package/composer.json")
-                foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // "1.x-dev"' "$package/composer.json")
+                foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // empty' "$package/composer.json")
+
+                if [ -z "$foundation" ]; then
+                    echo "$package does not require open-dxp/test-foundation in require-dev." >&2
+                    exit 1
+                fi
 
                 mkdir -p "${{ inputs.application }}"
                 cd "${{ inputs.application }}"
 
-                composer init --quiet --no-interaction --name=open-dxp/ci --type=project
-                composer config minimum-stability dev
-                composer config prefer-stable true
-                composer config sort-packages true
+                echo '{"minimum-stability": "dev", "prefer-stable": true}' > composer.json
 
-                for plugin in 'open-dxp/*' php-http/discovery symfony/flex symfony/runtime pestphp/pest-plugin; do
-                    composer config --no-plugins "allow-plugins.$plugin" true
-                done
-
-                # The first repository composer is told about is the canonical one, and each of
-                # these puts itself in front, so the package goes last and ends up first. Named the
-                # other way round, a registry that also carries this package wins and the run tests
-                # the release instead of the checkout.
                 if [ -n '${{ inputs.composer_repository }}' ]; then
                     composer config repositories.private composer '${{ inputs.composer_repository }}'
                 fi
 
-                composer config repositories.package path "$package"
+                composer require --no-interaction --no-progress --no-plugins --no-scripts "open-dxp/test-foundation:$foundation"
 
-                # composer config does not reach autoload.
-                jq --argjson tests "$(jq -c '."autoload-dev"."psr-4"' "$package/composer.json")" \
-                    '."autoload-dev"."psr-4" = $tests' composer.json > composer.next
-                mv composer.next composer.json
-
-                require=("$name:*@dev" "open-dxp/test-foundation:$foundation")
-
-                # Composer never installs the require-dev of a dependency. This package is under
-                # test, so its development dependencies go in too.
-                while read -r dev; do
-                    require+=("$dev:*")
-                done < <(jq -r '(."require-dev" // {}) | keys[] | select(. != "open-dxp/test-foundation")' "$package/composer.json")
-
-                # What the package names under extra.opendxp-test.optional is optional for whoever
-                # installs the package and necessary for its tests, so it goes in the same way.
-                while read -r optional; do
-                    require+=("$optional:*")
-                done < <(jq -r '(.extra."opendxp-test".optional // [])[]' "$package/composer.json")
-
-                if [ -n "${{ inputs.opendxp_version }}" ]; then
-                    require+=("open-dxp/opendxp:${{ inputs.opendxp_version }}")
+                if [ -n '${{ inputs.opendxp_version }}' ]; then
+                    vendor/bin/opendxp-test bundle "$package" --opendxp '${{ inputs.opendxp_version }}'
+                else
+                    vendor/bin/opendxp-test bundle "$package"
                 fi
 
-                composer require --no-interaction --no-progress --no-scripts "${require[@]}"
-
-                cp -r vendor/open-dxp/test-foundation/app/. .
-                cp "$package/phpunit.xml.dist" phpunit.xml
-
-                # Pest names a test after its path below the application, and composer links the
-                # package into vendor, so the tests are copied instead.
-                cp -r "$package/tests" tests
-                chmod 755 bin/console
-                mkdir -p public var/cache var/log var/report
-
-                # The application reads its configuration through Symfony's Dotenv, and that is
-                # also what puts a variable into $_ENV. An exported one only reaches $_SERVER, and
-                # OpenDXP looks the kernel up in $_ENV.
-                kernel=$(grep -oP '(?<=name="KERNEL_CLASS" value=")[^"]+' phpunit.xml)
-
-                if [ -z "$kernel" ]; then
-                    echo 'phpunit.xml names no KERNEL_CLASS.' >&2
-                    exit 1
-                fi
-
-                # .env.dist is where the template says what the application reads. Each of those
-                # takes the value this job carries, or keeps the default the template gives it.
-                {
-                    while IFS= read -r line; do
-                        name=${line%%=*}
-
-                        case "$name" in '' | '#'*) continue ;; esac
-
-                        if [ -n "${!name+is set}" ]; then
-                            printf '%s=%s\n' "$name" "${!name}"
-                        else
-                            printf '%s\n' "$line"
-                        fi
-                    done < .env.dist
-
-                    printf 'KERNEL_CLASS=%s\n' "$kernel"
-                    printf 'OPENDXP_KERNEL_CLASS=%s\n' "$kernel"
-                } > .env
+                mkdir -p var/report
 
         -   name: Install OpenDXP
             shell: bash
             working-directory: ${{ inputs.application }}
-            run: |
-                set -eu
-
-                # A bundle install writes configuration, and with APP_DEBUG=1 the next command
-                # rebuilds the container because of it. Only the tests need the debug container.
-                export APP_DEBUG=0
-
-                OPENDXP_PROJECT_ROOT="$PWD" vendor/bin/opendxp-install \
-                    --mysql-host-socket='${{ inputs.database_host }}' \
-                    --mysql-port='${{ inputs.database_port }}' \
-                    --mysql-username='${{ inputs.database_user }}' \
-                    --mysql-password='${{ inputs.database_password }}' \
-                    --mysql-database='${{ inputs.database_name }}' \
-                    --admin-username=admin --admin-password=testtesttest \
-                    --skip-database-config --no-interaction
-
-                # A bundle that is enabled but not installed creates its tables the first time
-                # something asks for them. Inside a test that DDL ends the transaction, and the
-                # isolation with it.
-                bin/console opendxp:bundle:list --json \
-                    | jq -r '.[] | select(.Enabled and .Installable and (.Installed | not)) | .Bundle' \
-                    | xargs -r -n1 -I{} bin/console opendxp:bundle:install {} --no-post-change-commands -q
-
-                bin/console assets:install public -q
-
-                if compgen -G "var/classes/definition_*.php" > /dev/null; then
-                    bin/console opendxp:deployment:classes-rebuild --create-classes -n -q
-                fi
-
-                # phpstan reads the debug container, and only a debug boot writes it.
-                APP_DEBUG=1 bin/console cache:warmup -q
+            env:
+                DATABASE_URL: mysql://${{ inputs.database_user }}:${{ inputs.database_password }}@${{ inputs.database_host }}:${{ inputs.database_port }}/${{ inputs.database_name }}
+            run: vendor/bin/opendxp-test install

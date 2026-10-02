@@ -130,69 +130,14 @@ jobs:
                 working-directory: application
                 run: echo "path=vendor/$(jq -r .name ../composer.json)" >> $GITHUB_OUTPUT
 
-            -   name: Lint the application
+            -   name: Analyse the package
                 working-directory: application
-                run: |
-                    package="${{ steps.package.outputs.path }}"
-
-                    bin/console lint:container
-                    bin/console lint:yaml config
-                    bin/console lint:twig templates --no-debug --env=production
-
-                    if [ -d "$package/templates" ]; then
-                        bin/console lint:twig "$package/templates" --no-debug --env=production
-                    fi
-
-            -   name: Run phpstan
-                id: phpstan
-                working-directory: application
-                run: |
-                    package="${{ steps.package.outputs.path }}"
-                    echo "package=$package" >> $GITHUB_OUTPUT
-
-                    if [ ! -f "$package/phpstan.neon" ]; then
-                        echo 'no phpstan.neon, skipping'
-                        exit 0
-                    fi
-
-                    # The sources are named here on purpose. Without them phpstan reads no files
-                    # and still reports success. A package that keeps them elsewhere, core among
-                    # them, names them in its own configuration.
-                    if [ -d "$package/src" ]; then
-                        vendor/bin/phpstan analyse -c "$package/phpstan.neon" "$package/src"
-                    else
-                        vendor/bin/phpstan analyse -c "$package/phpstan.neon"
-                    fi
-
-            -   name: Run deptrac
-                working-directory: application
-                run: |
-                    package="${{ steps.package.outputs.path }}"
-
-                    if [ -f "$package/deptrac.yaml" ]; then
-                        vendor/bin/deptrac analyse -c "$package/deptrac.yaml"
-                    else
-                        echo 'no deptrac.yaml, skipping'
-                    fi
-
-            -   name: Run phparkitect
-                working-directory: application
-                run: |
-                    package="${{ steps.package.outputs.path }}"
-
-                    if [ -f "$package/phparkitect.php" ]; then
-                        vendor/bin/phparkitect check --config="$package/phparkitect.php"
-                    else
-                        echo 'no phparkitect.php, skipping'
-                    fi
+                run: vendor/bin/opendxp-test analyse "${{ steps.package.outputs.path }}"
 
             -   name: Generate a baseline
                 if: failure() && inputs.generate_baseline
                 working-directory: application
-                run: |
-                    package="${{ steps.phpstan.outputs.package }}"
-                    vendor/bin/phpstan analyse -c "$package/phpstan.neon" "$package/src" \
-                        --generate-baseline "$GITHUB_WORKSPACE/phpstan-baseline.neon"
+                run: vendor/bin/opendxp-test analyse "${{ steps.package.outputs.path }}" --baseline
 
             -   name: Attach the baseline
                 if: failure() && inputs.generate_baseline
