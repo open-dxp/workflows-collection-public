@@ -24,7 +24,7 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 
 | Configuration                             |                                                           |
 |-------------------------------------------|-----------------------------------------------------------|
-| `codeception-tests-configuration/`        | the matrix for test runs                                  |
+| `tests-configuration/`                    | the matrix for test runs                                  |
 | `phpstan-configuration/`                  | the matrix for analysis runs                              |
 | `php-cs-fixer-configuration/`             | the shared php-cs-fixer rule sets                         |
 | `config/vulnerabilities-ignore-list.json` | accepted advisories, looked up by the `ignore-list` input |
@@ -70,7 +70,7 @@ jobs:
             -   id: matrix
                 uses: open-dxp/workflows-collection-public/.github/actions/test-matrix@main
                 with:
-                    configuration: codeception-tests-configuration
+                    configuration: tests-configuration
 
     pest-tests:
         needs: setup-matrix
@@ -126,8 +126,8 @@ services. Your `phpstan.neon` has to point at the container the test kernel writ
 from a configuration in this repository:
 
 ```
-codeception-tests-configuration/matrix-config.json     for test runs
-phpstan-configuration/matrix-config.json               for the analysis
+tests-configuration/matrix-config.json     for test runs
+phpstan-configuration/matrix-config.json   for the analysis
 ```
 
 It fails when nothing matches. An empty matrix runs no tests and still reports success, which
@@ -204,3 +204,13 @@ Credentials for it go in `COMPOSER_AUTH`, as a secret.
 
 What a package lists under `extra.opendxp-test.optional` is installed like any other dependency.
 What that key is for is in [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation).
+
+## Deprecated
+
+These belong to the Codeception setup, which is deprecated. Do not use them for a new package.
+
+|                                               | Use instead                     |
+|-----------------------------------------------|---------------------------------|
+| `reusable-codeception-tests-centralized.yaml` | `reusable-pest-tests.yaml`      |
+| `reusable-static-analysis-centralized.yaml`   | `reusable-static-analysis.yaml` |
+| `codeception-tests-configuration/`            | `tests-configuration/`          |
