@@ -91,8 +91,6 @@ jobs:
             APP_SECRET: test
             DATABASE_URL: "mysql://root@127.0.0.1:33006/opendxp_test"
             DATABASE_SERVER_VERSION: ${{ inputs.server_version }}
-            TEST_TIMEZONE: 'Europe/Zurich'
-            TEST_DOMAIN: 'opendxp.test'
             OPENDXP_TEST_REDIS_DSN: ${{ inputs.redis_dsn }}
             OPENDXP_OPEN_SEARCH_HOST: "localhost:${{ inputs.opendxp_open_search_host }}"
             OPENDXP_INSTANCE_IDENTIFIER: ${{ secrets.OPENDXP_INSTANCE_IDENTIFIER }}
