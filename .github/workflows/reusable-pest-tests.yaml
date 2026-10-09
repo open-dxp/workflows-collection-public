@@ -167,6 +167,8 @@ jobs:
                 with:
                     packages: ffmpeg
                     version: 1
+                    # ffmpeg depends on libraries that register themselves in their install scripts.
+                    execute_install_scripts: true
 
             -   name: Tune the database
                 run: |
