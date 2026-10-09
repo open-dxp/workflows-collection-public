@@ -83,6 +83,7 @@ jobs:
     pest-tests:
         name: Pest tests
         runs-on: ubuntu-latest
+        timeout-minutes: 20
         continue-on-error: ${{ inputs.experimental == true }}
         concurrency:
             group: pest-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.database }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
@@ -155,15 +156,17 @@ jobs:
 
             -   name: Install Ghostscript and PDFInfo
                 if: inputs.install_ghostscript_and_pdfinfo
-                run: |
-                    sudo apt-get update --allow-releaseinfo-change
-                    sudo apt-get install -y ghostscript poppler-utils
+                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                with:
+                    packages: ghostscript poppler-utils
+                    version: 1
 
             -   name: Install FFmpeg
                 if: inputs.install_ffmpeg
-                run: |
-                    sudo apt-get update --allow-releaseinfo-change
-                    sudo apt-get install -y ffmpeg
+                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                with:
+                    packages: ffmpeg
+                    version: 1
 
             -   name: Tune the database
                 run: |
@@ -205,7 +208,23 @@ jobs:
                 run: |
                     # This installs the node module the php bridge talks to as well, which a bare
                     # `npx playwright install` does not.
-                    vendor/bin/playwright-install --with-deps chromium
+                    vendor/bin/playwright-install chromium
+
+            -   name: List the browser packages
+                if: inputs.enable_browser
+                id: browser-packages
+                working-directory: ${{ runner.temp }}/application/vendor/playwright-php/playwright/bin
+                run: |
+                    # `--with-deps` would download these from the apt mirror on every run.
+                    packages=$(npx --no-install playwright install-deps --dry-run chromium | sed -n 's/^  \([a-z0-9][a-z0-9.+-]*\)$/\1/p' | tr '\n' ' ')
+                    echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+            -   name: Install the browser packages
+                if: inputs.enable_browser && steps.browser-packages.outputs.packages != ''
+                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                with:
+                    packages: ${{ steps.browser-packages.outputs.packages }}
+                    version: 1
 
             -   name: Run Pest
                 working-directory: ${{ runner.temp }}/application
