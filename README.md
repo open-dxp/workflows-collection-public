@@ -162,6 +162,7 @@ looks like a suite that passed.
 | `enable_redis_service`            | a redis container beside the application             |
 | `enable_opensearch_service`       | an opensearch container beside the application       |
 | `install_ghostscript_and_pdfinfo` | for suites that read pdfs                            |
+| `install_ffmpeg`                  | for suites that convert videos                       |
 
 The defaults for `redis_dsn`, `opendxp_open_search_host` and `opendxp_opensearch_version` match
 what the containers are started with. Change them only if your tests expect other values.

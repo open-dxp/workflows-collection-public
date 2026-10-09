@@ -57,6 +57,10 @@ on:
                 required: false
                 type: boolean
                 default: false
+            install_ffmpeg:
+                required: false
+                type: boolean
+                default: false
             pest_options:
                 required: false
                 type: string
@@ -154,6 +158,12 @@ jobs:
                 run: |
                     sudo apt-get update --allow-releaseinfo-change
                     sudo apt-get install -y ghostscript poppler-utils
+
+            -   name: Install FFmpeg
+                if: inputs.install_ffmpeg
+                run: |
+                    sudo apt-get update --allow-releaseinfo-change
+                    sudo apt-get install -y ffmpeg
 
             -   name: Tune the database
                 run: |
