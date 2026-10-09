@@ -156,14 +156,14 @@ jobs:
 
             -   name: Install Ghostscript and PDFInfo
                 if: inputs.install_ghostscript_and_pdfinfo
-                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                uses: awalsh128/cache-apt-pkgs-action@v1
                 with:
                     packages: ghostscript poppler-utils
                     version: 1
 
             -   name: Install FFmpeg
                 if: inputs.install_ffmpeg
-                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                uses: awalsh128/cache-apt-pkgs-action@v1
                 with:
                     packages: ffmpeg
                     version: 1
@@ -221,7 +221,7 @@ jobs:
 
             -   name: Install the browser packages
                 if: inputs.enable_browser && steps.browser-packages.outputs.packages != ''
-                uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+                uses: awalsh128/cache-apt-pkgs-action@v1
                 with:
                     packages: ${{ steps.browser-packages.outputs.packages }}
                     version: 1
