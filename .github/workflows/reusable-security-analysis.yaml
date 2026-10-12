@@ -1,0 +1,78 @@
+name: Security analysis
+
+on:
+    workflow_call:
+        inputs:
+            php_version:
+                required: false
+                type: string
+                default: '8.4'
+            psalm_version:
+                description: The version of Psalm, as major.minor.
+                required: false
+                type: string
+                default: '6.20'
+
+        secrets:
+            COMPOSER_AUTH:
+                required: false
+
+jobs:
+    security-analysis:
+        name: Security analysis
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+            security-events: write
+        concurrency:
+            group: security-analysis-${{ github.workflow }}-${{ github.ref }}
+            cancel-in-progress: true
+
+        # A pull request from a fork may not upload to code scanning. A finding fails its job instead.
+        env:
+            CAN_UPLOAD: >-
+                ${{ github.event_name != 'pull_request'
+                || github.event.pull_request.head.repo.full_name == github.repository }}
+
+        steps:
+            -   name: Checkout the package
+                uses: actions/checkout@v7
+
+            -   name: Install PHP and Psalm
+                uses: shivammathur/setup-php@v2
+                with:
+                    coverage: none
+                    php-version: ${{ inputs.php_version }}
+                    tools: psalm:${{ inputs.psalm_version }}
+
+            -   name: Cache the composer downloads
+                uses: actions/cache@v6
+                with:
+                    path: ~/.cache/composer
+                    key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
+                    restore-keys: composer-${{ inputs.php_version }}-
+
+            # The test application allows the development branches of the OpenDXP packages. The analysis does too.
+            # Composer cannot read the version of a pull request checkout. The target branch names it.
+            -   name: Install the dependencies
+                env:
+                    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    COMPOSER_ROOT_VERSION: ${{ github.base_ref || github.ref_name }}-dev
+                run: |
+                    composer config minimum-stability dev
+                    composer config prefer-stable true
+                    composer install --no-interaction --no-progress --no-plugins --no-scripts --ignore-platform-reqs
+
+            # Psalm exits with 2 when it finds an issue. Code scanning judges the findings. Only a crash fails the job.
+            -   name: Run the taint analysis
+                run: |
+                    psalm --taint-analysis --no-progress --report=results.sarif \
+                        || test $? -eq 2 -a "$CAN_UPLOAD" = true
+
+            -   name: Upload the findings to code scanning
+                if: env.CAN_UPLOAD == 'true'
+                uses: github/codeql-action/upload-sarif@v4
+                with:
+                    sarif_file: results.sarif
+                    category: psalm
