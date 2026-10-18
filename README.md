@@ -93,10 +93,6 @@ jobs:
 A `phpunit.xml.dist`, a `tests/Application/TestKernel.php` and `open-dxp/test-foundation` under
 `require-dev`. How to write any of it is in [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation).
 
-The application is built with `opendxp-test bundle` and `opendxp-test install` from the test
-foundation, the same commands the OpenDXP testkit runs. A run in CI and a run in the testkit come to
-the same result.
-
 ## Static analysis
 
 The same shape, with the phpstan matrix:
@@ -119,11 +115,9 @@ The same shape, with the phpstan matrix:
             experimental: ${{ matrix.matrix.experimental }}
 ```
 
-The analysis runs `opendxp-test analyse`: lint always, and phpstan, deptrac and phparkitect when the
-package configures them. phpstan reads the compiled container to know the services, so this builds
-and installs the same application the tests use. Your `phpstan.neon` names its paths and points at
-the container the test kernel writes, which [open-dxp/test-foundation](https://github.com/open-dxp/test-foundation)
-documents.
+The analysis builds and installs the same application as the tests. It then runs
+`opendxp-test analyse` in it. [Commands](https://github.com/open-dxp/test-foundation#commands) in the
+test foundation lists what it checks.
 
 ## The matrix
 
@@ -142,16 +136,16 @@ looks like a suite that passed.
 
 `reusable-pest-tests.yaml` and `reusable-static-analysis.yaml`:
 
-|                                |                                                                   |
-|--------------------------------|-------------------------------------------------------------------|
-| `php_version`                  | required                                                          |
-| `dependencies`                 | `locked`, `highest` or `lowest`, handed to composer               |
-| `database`                     | `mysql:8.4` by default, an image name                             |
-| `server_version`               | the server version doctrine is configured with, matches the image |
-| `experimental`                 | a failure does not fail the run                                   |
-| `opendxp_version`              | a version of `open-dxp/opendxp` to force                          |
-| `composer_repository`          | a composer repository besides packagist, as a url                 |
-| `execute_post_checkout_action` | run `.github/actions/post-checkout-action` of your package        |
+|                                |                                                                                                           |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------|
+| `php_version`                  | required                                                                                                  |
+| `dependencies`                 | `locked`, `highest` or `lowest`, handed to composer                                                       |
+| `database`                     | `mysql:8.4` by default, an image name                                                                     |
+| `server_version`               | the server version doctrine is configured with, matches the image, required by `reusable-pest-tests.yaml` |
+| `experimental`                 | a failure does not fail the run                                                                           |
+| `opendxp_version`              | a version of `open-dxp/opendxp` to force                                                                  |
+| `composer_repository`          | a composer repository besides packagist, as a url                                                         |
+| `execute_post_checkout_action` | run `.github/actions/post-checkout-action` of your package                                                |
 
 `reusable-pest-tests.yaml` also:
 
