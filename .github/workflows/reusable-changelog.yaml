@@ -1,0 +1,31 @@
+name: Changelog
+
+on:
+    workflow_call:
+
+jobs:
+    changelog:
+        name: Changelog
+        runs-on: ubuntu-latest
+
+        steps:
+            -   uses: actions/checkout@v7
+
+            # The scripts come from the same commit of this repository as the workflow the package calls.
+            -   uses: actions/checkout@v7
+                with:
+                    repository: open-dxp/workflows-collection-public
+                    ref: ${{ github.job_workflow_sha }}
+                    path: .workflows-collection
+
+            -   uses: actions/setup-node@v7
+                with:
+                    node-version: 22
+
+            -   name: Changelog Enforcer
+                uses: dangoslen/changelog-enforcer@v3
+                with:
+                    skipLabels: no changelog
+
+            -   name: Changelog Lint
+                run: node .workflows-collection/changelog-lint/lint.mjs

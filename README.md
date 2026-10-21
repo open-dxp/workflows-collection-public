@@ -7,15 +7,16 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 
 ## What is here
 
-| Workflow                                 |                                                                    |
-|------------------------------------------|--------------------------------------------------------------------|
-| `reusable-pest-tests.yaml`               | runs a package's Pest suite in an OpenDXP application built for it |
-| `reusable-static-analysis.yaml`          | runs phpstan over a package, against the same application          |
-| `reusable-php-cs-fixer.yaml`             | runs php-cs-fixer and commits the fixes                            |
-| `reusable-composer-checks.yaml`          | runs `composer audit` and `composer outdated`                      |
-| `reusable-composer-vulnerabilities.yaml` | checks the installed packages against the advisory database        |
-| `reusable-cla-check.yaml`                | checks that a contributor has signed the CLA                       |
-| `stale.yml`                              | marks issues nobody has answered for 20 days                       |
+| Workflow                                 |                                                                                 |
+|------------------------------------------|---------------------------------------------------------------------------------|
+| `reusable-pest-tests.yaml`               | runs a package's Pest suite in an OpenDXP application built for it              |
+| `reusable-static-analysis.yaml`          | runs phpstan over a package, against the same application                       |
+| `reusable-php-cs-fixer.yaml`             | runs php-cs-fixer and commits the fixes                                         |
+| `reusable-composer-checks.yaml`          | runs `composer audit` and `composer outdated`                                   |
+| `reusable-changelog.yaml`                | checks the `CHANGELOG.md` of a pull request: an entry and its form              |
+| `reusable-composer-vulnerabilities.yaml` | checks the installed packages against the advisory database                     |
+| `reusable-cla-check.yaml`                | checks that a contributor has signed the CLA                                    |
+| `stale.yml`                              | marks issues nobody has answered for 20 days                                    |
 
 | Action                      |                                                      |
 |-----------------------------|------------------------------------------------------|
@@ -28,6 +29,10 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 | `phpstan-configuration/`                  | the matrix for analysis runs                              |
 | `php-cs-fixer-configuration/`             | the shared php-cs-fixer rule sets                         |
 | `config/vulnerabilities-ignore-list.json` | accepted advisories, looked up by the `ignore-list` input |
+
+| Changelog lint            |                                                           |
+|---------------------------|-----------------------------------------------------------|
+| `changelog-lint/lint.mjs` | reads a `CHANGELOG.md` and reports what breaks its format |
 
 ## How a test run is put together
 
