@@ -23,7 +23,7 @@ jobs:
                     node-version: 22
 
             -   name: Changelog Enforcer
-                uses: dangoslen/changelog-enforcer@v3
+                uses: dangoslen/changelog-enforcer@v3.7.0
                 with:
                     skipLabels: no changelog
 
