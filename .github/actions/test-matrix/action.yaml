@@ -30,7 +30,7 @@ runs:
                     exit 1
                 fi
 
-                versions=$(jq -r '.require.php // ""' "$manifest" | grep -oP '\d+\.\d+' | paste -sd, -)
+                versions=$(jq -r '.require.php // "" | [scan("\\d+\\.\\d+")] | join(",")' "$manifest")
                 : "${versions:=default}"
 
                 configuration="$GITHUB_ACTION_PATH/../../../${{ inputs.configuration }}/matrix-config.json"

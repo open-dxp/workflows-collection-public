@@ -29,7 +29,6 @@ jobs:
             group: security-analysis-${{ github.workflow }}-${{ github.ref }}
             cancel-in-progress: true
 
-        # A pull request from a fork may not upload to code scanning. A finding fails its job instead.
         env:
             CAN_UPLOAD: >-
                 ${{ github.event_name != 'pull_request'
