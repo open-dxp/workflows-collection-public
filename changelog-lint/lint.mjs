@@ -6,6 +6,7 @@ export const MARKERS = ['HIGHLIGHT', 'OPT-IN', 'FOLLOW-UP', 'MIGRATION'];
 
 const TITLE = '# Changelog';
 const VERSION = /^## (\d+)\.(\d+)\.(\d+)$/;
+const UNRELEASED = '## [Unreleased]';
 const ENTRY = /^- (.*)$/;
 const ANNOUNCEMENT = /^ {2}> (.+)$/;
 const STEP = /^ {2}(\d+)\. (.+)$/;
@@ -54,6 +55,20 @@ export function parseChangelog(text) {
         previous = line;
 
         if (index === firstLine || line === '') {
+            return;
+        }
+
+        // The changes that wait for a version, as Keep a Changelog names them. Only the top section may be unreleased.
+        if (line === UNRELEASED) {
+            close();
+
+            if (versions.length > 0) {
+                fail(number, `${UNRELEASED} is the top section, above every version.`);
+            }
+
+            version = {version: 'Unreleased', numbers: null, line: number, entries: []};
+            versions.push(version);
+
             return;
         }
 
@@ -125,7 +140,7 @@ export function parseChangelog(text) {
             return;
         }
 
-        fail(number, 'The line is no version heading, no entry, no announcement and no step.');
+        fail(number, 'The line is no version heading, no `## [Unreleased]`, no entry, no announcement and no step.');
     });
 
     close();
@@ -209,7 +224,7 @@ function toEntry({type, markers, text, announcement, steps, line}) {
 }
 
 function checkOrder(previous, current, fail) {
-    if (previous === undefined) {
+    if (previous === undefined || previous.numbers === null) {
         return;
     }
 
@@ -232,7 +247,8 @@ function checkOrder(previous, current, fail) {
 export function checkNextVersion(versions) {
     const [next] = versions;
 
-    if (next === undefined || /^\d+\.0\.0$/.test(next.version)) {
+    // Until the unreleased changes get their version, a [BC BREAK] among them only means the next release is a major one.
+    if (next === undefined || next.version === 'Unreleased' || /^\d+\.0\.0$/.test(next.version)) {
         return [];
     }
 
