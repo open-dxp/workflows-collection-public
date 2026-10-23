@@ -47,17 +47,26 @@ runs:
                 set -eu
 
                 package=$(cd "${{ inputs.package }}" && pwd)
-                foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // empty' "$package/composer.json")
-
-                if [ -z "$foundation" ]; then
-                    echo "$package does not require open-dxp/test-foundation in require-dev." >&2
-                    exit 1
-                fi
 
                 mkdir -p "${{ inputs.application }}"
                 cd "${{ inputs.application }}"
 
                 echo '{"minimum-stability": "dev", "prefer-stable": true}' > composer.json
+
+                if [ "$(jq -r .name "$package/composer.json")" = 'open-dxp/test-foundation' ]; then
+                    # The foundation under test is the checkout. Offered first, it wins over every release,
+                    # and like a checked out bundle it reports the major version of its newest tag.
+                    major=$(git -C "$package" describe --tags --abbrev=0 | sed -E 's/^v?([0-9]+)\..*/\1/')
+                    composer config repositories.foundation "{\"type\": \"path\", \"url\": \"$package\", \"options\": {\"versions\": {\"open-dxp/test-foundation\": \"$major.99.99\"}}}"
+                    foundation='*'
+                else
+                    foundation=$(jq -r '."require-dev"."open-dxp/test-foundation" // empty' "$package/composer.json")
+
+                    if [ -z "$foundation" ]; then
+                        echo "$package does not require open-dxp/test-foundation in require-dev." >&2
+                        exit 1
+                    fi
+                fi
 
                 if [ -n '${{ inputs.composer_repository }}' ]; then
                     composer config repositories.private composer '${{ inputs.composer_repository }}'
