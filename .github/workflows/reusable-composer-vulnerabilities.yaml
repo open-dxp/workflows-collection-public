@@ -95,7 +95,7 @@ jobs:
                     } >> "$GITHUB_ENV"
 
             -   name: Send report to Microsoft Teams
-                if: failure() && github.event_name == 'schedule' && env.TEAMS_URI != ''
+                if: failure() && contains(fromJSON('["schedule", "workflow_dispatch"]'), github.event_name) && env.TEAMS_URI != ''
                 uses: aliencube/microsoft-teams-actions@v0.8.0
                 with:
                     webhook_uri: ${{ env.TEAMS_URI }}

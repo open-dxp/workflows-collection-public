@@ -238,9 +238,10 @@ jobs:
 A run started by hand searches the whole history for secrets. A pull request or a push searches only
 its own commits.
 
-`reusable-composer-vulnerabilities.yaml` installs the highest versions the constraints of the package
-allow. An advisory or an audit that cannot run fails the job. In a run on a `schedule` it also posts
-the report to Microsoft Teams, when `TEAMS_COMPOSER_VULNERABILITY_URI` is set.
+`reusable-composer-vulnerabilities.yaml` audits a project as its `composer.lock` installs it, and a
+package with the highest versions its constraints allow. An advisory or an audit that cannot run fails
+the job. A pull request is only audited when it changes `composer.json`. A scheduled run and a run
+started by hand also post the report to Microsoft Teams, when `TEAMS_COMPOSER_VULNERABILITY_URI` is set.
 
 `reusable-taint-analysis.yaml` runs Psalm 7 with `psalm/plugin-symfony`,
 `weirdan/doctrine-psalm-plugin` and [open-dxp/psalm-plugin](https://github.com/open-dxp/psalm-plugin),
