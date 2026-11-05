@@ -1,0 +1,21 @@
+# Extends the default rules of gitleaks with known false positives.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Encryption keys of test applications. They encrypt test data only."
+regexTarget = "match"
+regexes = [
+    '''def0000021cc887a70b119fec21a31a040f3397e9481d22d18055f3c63740444af9836f5ea44de9dcdd66ae222bebda4537a9da8cd5446e0a222a4dd36716596a9146632''',
+    '''def000002ee3b6d84f6627607c2fb0b737d79aae42b7f74c9058c51c78f7921ff585d653c81d6af3361af9df88480394189be9fff94034c7f0f6f790f4c52fdd19c81248''',
+    '''def00000fc1e34a17a03e2ef85329325b0736a5941633f8062f6b0a1a20f416751af119256bea0abf83ac33ef656b3fff087e1ce71fa6b8810d7f854fe2781f3fe4507f6''',
+]
+
+[[allowlists]]
+description = "Files that only look like they hold secrets"
+paths = [
+    '''(^|/)\.php-cs-fixer\.cache$''',
+    '''^public/js/lib/minipaint/''',
+    '''^public/build/imageEditor/''',
+]

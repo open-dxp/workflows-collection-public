@@ -29,8 +29,12 @@ if [ -n "${RANGE:-}" ]; then
     git rev-list "${range[@]}" > /dev/null 2> "$log" || { report "Secret scan could not run"; cat "$REPORT"; exit 2; }
 fi
 
+gitleaks=$(cd "$(dirname "$0")/gitleaks" && pwd)
+image=$(sed -n 's/^FROM //p' "$gitleaks/Dockerfile")
+
 # gitleaks exits with 1 on an error. Exit code 3 marks findings.
-docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --log-opts="${RANGE:-}" \
+docker run --rm -v "$PWD:/repo" -v "$gitleaks/gitleaks.toml:/gitleaks.toml:ro" "$image" \
+    git /repo --config /gitleaks.toml --log-opts="${RANGE:-}" \
     --redact --verbose --no-banner --no-color --exit-code 3 > "$log" 2>&1
 
 case $? in
