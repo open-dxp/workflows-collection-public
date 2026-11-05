@@ -6,6 +6,7 @@
 # SOURCES lists the directories to analyse, separated by spaces. It defaults to src.
 # REPORT names the file for a Markdown report. SARIF names the file for the findings in SARIF.
 # COMPOSER_REPOSITORY names a composer repository besides packagist, as a url.
+# A package keeps known findings in psalm-taint-baseline.xml. Without that file, every finding counts.
 # The exit code is 0 without a finding, 1 with a finding and 2 when the analysis could not run.
 
 set -uo pipefail
@@ -63,10 +64,13 @@ cat > psalm-taint.xml <<XML
 </psalm>
 XML
 
+baseline=()
+[ ! -f psalm-taint-baseline.xml ] || baseline=(--use-baseline=psalm-taint-baseline.xml)
+
 # Psalm exits with 2 for any issue. Only valid JSON shows that the run finished.
 rm -f "$SARIF"
 php -d memory_limit=-1 vendor/bin/psalm --config=psalm-taint.xml --no-progress --no-cache --output-format=json --report="$SARIF" \
-    > "$issues" 2> "$log"
+    "${baseline[@]}" > "$issues" 2> "$log"
 jq -e 'type == "array"' "$issues" > /dev/null 2>&1 || fail
 jq -e '.runs' "$SARIF" > /dev/null 2>&1 || fail
 

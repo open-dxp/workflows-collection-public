@@ -248,7 +248,8 @@ started by hand also post the report to Microsoft Teams, when `TEAMS_COMPOSER_VU
 which adds the sinks of OpenDXP. OpenDXP itself is analysed without the last one. Only taint
 findings count. The other issues of Psalm are type checks, which phpstan covers. The package needs no
 Psalm configuration and no Psalm in its `composer.json`. `sources` names the directories to analyse,
-`src` by default.
+`src` by default. A package with known false positives keeps them in a Psalm baseline named
+`psalm-taint-baseline.xml` in its root. Only findings outside the baseline count then.
 
 In a private repository a finding fails the job. The summary of the job lists the findings, and the
 run keeps them in SARIF. Anyone can read the runs of a public repository, so its findings go only to
