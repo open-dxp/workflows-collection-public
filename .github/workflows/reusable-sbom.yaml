@@ -11,6 +11,11 @@ on:
                 required: false
                 default: '8.4'
                 type: string
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
+                required: false
+                type: string
+                default: ''
         secrets:
             COMPOSER_AUTH:
                 required: false
@@ -50,6 +55,7 @@ jobs:
             -   name: Create SBOM
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    COMPOSER_REPOSITORY: ${{ inputs.composer_repository }}
                     VERSION: ${{ steps.version.outputs.version }}
                 run: |
                     SBOM="${GITHUB_REPOSITORY#*/}-$VERSION.cdx.json"

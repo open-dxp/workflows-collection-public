@@ -16,6 +16,11 @@ on:
                 required: false
                 type: string
                 description: Ignore list type (e.g., public)
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
+                required: false
+                type: string
+                default: ''
         secrets:
             COMPOSER_AUTH:
                 required: false
@@ -77,6 +82,7 @@ jobs:
                 if: env.SKIP != 'true'
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    COMPOSER_REPOSITORY: ${{ inputs.composer_repository }}
                     IGNORE_LIST: ${{ inputs.ignore-list }}
                     REPORT: ${{ runner.temp }}/composer-audit.md
                 run: .workflows-collection/security/composer-audit.sh

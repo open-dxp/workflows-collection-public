@@ -2,11 +2,14 @@
 #
 # Creates a CycloneDX SBOM of the package in the working directory, without its development dependencies.
 # VERSION is the released version of the package, without a leading v. SBOM names the file for the SBOM.
+# COMPOSER_REPOSITORY names a composer repository besides packagist, as a url.
 
 set -euo pipefail
 
 : "${VERSION:?VERSION must name the released version}"
 : "${SBOM:?SBOM must name the file for the SBOM}"
+
+[ -z "${COMPOSER_REPOSITORY:-}" ] || composer config repositories.private composer "$COMPOSER_REPOSITORY"
 
 export COMPOSER_ROOT_VERSION="$VERSION"
 

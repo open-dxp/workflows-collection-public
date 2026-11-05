@@ -5,6 +5,7 @@
 #
 # SOURCES lists the directories to analyse, separated by spaces. It defaults to src.
 # REPORT names the file for a Markdown report. SARIF names the file for the findings in SARIF.
+# COMPOSER_REPOSITORY names a composer repository besides packagist, as a url.
 # The exit code is 0 without a finding, 1 with a finding and 2 when the analysis could not run.
 
 set -uo pipefail
@@ -26,6 +27,8 @@ fail() {
     cat "$REPORT"
     exit 2
 }
+
+[ -z "${COMPOSER_REPOSITORY:-}" ] || composer config repositories.private composer "$COMPOSER_REPOSITORY"
 
 plugins='<pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/>'
 packages=('vimeo/psalm:^7.0' 'psalm/plugin-symfony:^5.10' 'weirdan/doctrine-psalm-plugin:^2.11')

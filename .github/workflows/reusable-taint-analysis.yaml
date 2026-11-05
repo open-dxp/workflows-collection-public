@@ -12,6 +12,11 @@ on:
                 required: false
                 type: string
                 default: 'src'
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
+                required: false
+                type: string
+                default: ''
 
         secrets:
             COMPOSER_AUTH:
@@ -70,6 +75,7 @@ jobs:
             -   name: Run taint analysis
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    COMPOSER_REPOSITORY: ${{ inputs.composer_repository }}
                     COMPOSER_ROOT_VERSION: ${{ github.base_ref || github.ref_name }}-dev
                     SOURCES: ${{ inputs.sources }}
                     REPORT: ${{ runner.temp }}/psalm-taint.md

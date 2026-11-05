@@ -280,6 +280,9 @@ jobs:
 
 The package has no lock file. The SBOM lists what a fresh install of the release resolves to.
 
+A package that needs a composer repository besides packagist passes it to all three as
+`composer_repository`, the same way as to the tests. Credentials for it go in `COMPOSER_AUTH`.
+
 ## Packages from a private registry
 
 Packagist is the only repository the application knows. 

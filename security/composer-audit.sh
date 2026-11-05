@@ -5,6 +5,7 @@
 # The exit code is 0 without an advisory, 1 with an advisory and 2 when the check could not run.
 #
 # IGNORE_LIST names a list in config/vulnerabilities-ignore-list.json. Its advisories are accepted.
+# COMPOSER_REPOSITORY names a composer repository besides packagist, as a url.
 
 set -uo pipefail
 
@@ -35,6 +36,8 @@ if [ -n "${IGNORE_LIST:-}" ]; then
         mv composer.json.tmp composer.json
     fi
 fi
+
+[ -z "${COMPOSER_REPOSITORY:-}" ] || composer config repositories.private composer "$COMPOSER_REPOSITORY"
 
 # A project is audited as its lock file installs it. A package without one as a fresh install resolves it.
 # Without COMPOSER_NO_SECURITY_BLOCKING, Composer skips versions with a known advisory and the audit never sees them.
