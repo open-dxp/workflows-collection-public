@@ -1,3 +1,4 @@
+# Deprecated. Use reusable-taint-analysis.yaml instead.
 name: Security analysis
 
 on:

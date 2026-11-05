@@ -1,3 +1,4 @@
+# Deprecated. Use reusable-pest-tests.yaml instead.
 name: Codeception tests
 
 # DEPRECATED

@@ -15,6 +15,9 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 | `reusable-composer-checks.yaml`          | runs `composer audit` and `composer outdated`                                   |
 | `reusable-changelog.yaml`                | checks the `CHANGELOG.md` of a pull request: an entry and its form              |
 | `reusable-composer-vulnerabilities.yaml` | checks the installed packages against the advisory database                     |
+| `reusable-taint-analysis.yaml`           | follows input from a request into SQL, HTML, files and other sinks, with Psalm  |
+| `reusable-secret-scan.yaml`              | searches the commits for secrets, with gitleaks                                 |
+| `reusable-sbom.yaml`                     | attaches a CycloneDX SBOM to a release                                          |
 | `reusable-cla-check.yaml`                | checks that a contributor has signed the CLA                                    |
 | `stale.yml`                              | marks issues nobody has answered for 20 days                                    |
 
@@ -29,6 +32,7 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 | `phpstan-configuration/`                  | the matrix for analysis runs                              |
 | `php-cs-fixer-configuration/`             | the shared php-cs-fixer rule sets                         |
 | `config/vulnerabilities-ignore-list.json` | accepted advisories, looked up by the `ignore-list` input |
+| `security/`                               | the scripts of the security checks                        |
 
 | Changelog lint            |                                                           |
 |---------------------------|-----------------------------------------------------------|
@@ -193,6 +197,88 @@ The global configurations read the files to fix from `.php-cs-fixer-finder.dist.
 package, so that file stays with the package. Without `use_global_config` the workflow uses
 `config_file`.
 
+## Security checks
+
+Four workflows check a package for known vulnerabilities, unsafe input and leaked secrets. Their logic
+lives in the scripts in `security/`. A workflow only runs a script and shows its report in the summary
+of the job.
+
+`.github/workflows/security.yaml` in your package:
+
+```yaml
+name: Security
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - "[0-9]+.[0-9]+"
+            - "[0-9]+.x"
+    pull_request:
+        types: [ opened, synchronize, reopened ]
+
+jobs:
+    composer-vulnerabilities:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-composer-vulnerabilities.yaml@main
+        secrets:
+            COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+    taint-analysis:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-taint-analysis.yaml@main
+        permissions:
+            contents: read
+            security-events: write
+        secrets:
+            COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+    secret-scan:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-secret-scan.yaml@main
+```
+
+A run started by hand searches the whole history for secrets. A pull request or a push searches only
+its own commits.
+
+`reusable-composer-vulnerabilities.yaml` installs the highest versions the constraints of the package
+allow. An advisory or an audit that cannot run fails the job. In a run on a `schedule` it also posts
+the report to Microsoft Teams, when `TEAMS_COMPOSER_VULNERABILITY_URI` is set.
+
+`reusable-taint-analysis.yaml` runs Psalm 7 with `psalm/plugin-symfony`,
+`weirdan/doctrine-psalm-plugin` and [open-dxp/psalm-plugin](https://github.com/open-dxp/psalm-plugin),
+which adds the sinks of OpenDXP. OpenDXP itself is analysed without the last one. Only taint
+findings count. The other issues of Psalm are type checks, which phpstan covers. The package needs no
+Psalm configuration and no Psalm in its `composer.json`. `sources` names the directories to analyse,
+`src` by default.
+
+In a private repository a finding fails the job. The summary of the job lists the findings, and the
+run keeps them in SARIF. Anyone can read the runs of a public repository, so its findings go only to
+code scanning, where people with write access see them. They do not fail the job.
+
+`reusable-sbom.yaml` takes the tag of a release, creates an SBOM of the package with
+`cyclonedx/cyclonedx-php-composer` and attaches it to the release:
+
+```yaml
+on:
+    release:
+        types: [ published ]
+    workflow_dispatch:
+        inputs:
+            tag:
+                required: true
+                type: string
+
+jobs:
+    sbom:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-sbom.yaml@main
+        permissions:
+            contents: write
+        with:
+            tag: ${{ github.event.release.tag_name || inputs.tag }}
+        secrets:
+            COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+```
+
+The package has no lock file. The SBOM lists what a fresh install of the release resolves to.
+
 ## Packages from a private registry
 
 Packagist is the only repository the application knows. 
@@ -212,10 +298,11 @@ What that key is for is in [open-dxp/test-foundation](https://github.com/open-dx
 
 ## Deprecated
 
-These belong to the Codeception setup, which is deprecated. Do not use them for a new package.
+Do not use these for a new package.
 
 |                                               | Use instead                     |
 |-----------------------------------------------|---------------------------------|
 | `reusable-codeception-tests-centralized.yaml` | `reusable-pest-tests.yaml`      |
 | `reusable-static-analysis-centralized.yaml`   | `reusable-static-analysis.yaml` |
+| `reusable-security-analysis.yaml`             | `reusable-taint-analysis.yaml`  |
 | `codeception-tests-configuration/`            | `tests-configuration/`          |

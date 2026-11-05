@@ -1,0 +1,64 @@
+name: Reusable SBOM
+
+on:
+    workflow_call:
+        inputs:
+            tag:
+                required: true
+                type: string
+                description: Release tag that receives the SBOM.
+            php-version:
+                required: false
+                default: '8.4'
+                type: string
+        secrets:
+            COMPOSER_AUTH:
+                required: false
+
+jobs:
+    sbom:
+        name: SBOM
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            -   name: Checkout release
+                uses: actions/checkout@v7
+                with:
+                    ref: ${{ inputs.tag }}
+
+            -   name: Install PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    coverage: 'none'
+                    php-version: ${{ inputs.php-version }}
+
+            -   name: Resolve version
+                id: version
+                run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+                env:
+                    TAG: ${{ inputs.tag }}
+
+            # The scripts come from the same commit of this repository as the workflow the package calls.
+            -   name: Checkout scripts
+                uses: actions/checkout@v7
+                with:
+                    repository: open-dxp/workflows-collection-public
+                    ref: ${{ job.workflow_sha }}
+                    path: .workflows-collection
+
+            -   name: Create SBOM
+                env:
+                    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    VERSION: ${{ steps.version.outputs.version }}
+                run: |
+                    SBOM="${GITHUB_REPOSITORY#*/}-$VERSION.cdx.json"
+                    SBOM="$SBOM" .workflows-collection/security/sbom.sh
+                    echo "SBOM=$SBOM" >> "$GITHUB_ENV"
+                    echo "SBOM with $(jq '.components | length' "$SBOM") components: \`$SBOM\`" >> "$GITHUB_STEP_SUMMARY"
+
+            -   name: Attach SBOM to release
+                env:
+                    GH_TOKEN: ${{ github.token }}
+                    TAG: ${{ inputs.tag }}
+                run: gh release upload "$TAG" "$SBOM" --clobber

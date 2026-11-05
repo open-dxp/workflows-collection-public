@@ -1,0 +1,111 @@
+name: Taint analysis
+
+on:
+    workflow_call:
+        inputs:
+            php_version:
+                required: false
+                type: string
+                default: '8.4'
+            sources:
+                description: The directories to analyse, separated by spaces.
+                required: false
+                type: string
+                default: 'src'
+
+        secrets:
+            COMPOSER_AUTH:
+                required: false
+
+jobs:
+    taint-analysis:
+        name: Taint analysis
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+            security-events: write
+        concurrency:
+            group: taint-analysis-${{ github.workflow }}-${{ github.ref }}
+            cancel-in-progress: true
+
+        steps:
+            -   name: Checkout package
+                uses: actions/checkout@v7
+
+            # The event of a scheduled run has no repository, so the visibility comes from the API.
+            -   name: Check visibility
+                env:
+                    GH_TOKEN: ${{ github.token }}
+                    FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+                run: |
+                    PRIVATE=$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)
+                    [ "$PRIVATE" = false ] && [ "$FORK" = false ] && CAN_UPLOAD=true || CAN_UPLOAD=false
+                    echo "PRIVATE=$PRIVATE" >> "$GITHUB_ENV"
+                    echo "CAN_UPLOAD=$CAN_UPLOAD" >> "$GITHUB_ENV"
+
+            # The scripts come from the same commit of this repository as the workflow the package calls.
+            -   name: Checkout scripts
+                uses: actions/checkout@v7
+                with:
+                    repository: open-dxp/workflows-collection-public
+                    ref: ${{ job.workflow_sha }}
+                    path: .workflows-collection
+
+            -   name: Install PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    coverage: none
+                    php-version: ${{ inputs.php_version }}
+
+            -   name: Cache composer downloads
+                uses: actions/cache@v6
+                with:
+                    path: ~/.cache/composer
+                    key: composer-${{ inputs.php_version }}-${{ hashFiles('composer.json') }}
+                    restore-keys: composer-${{ inputs.php_version }}-
+
+            # The test application allows the development branches of the OpenDXP packages. The analysis does too.
+            # Composer cannot read the version of a pull request checkout. The target branch names it.
+            -   name: Run taint analysis
+                env:
+                    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+                    COMPOSER_ROOT_VERSION: ${{ github.base_ref || github.ref_name }}-dev
+                    SOURCES: ${{ inputs.sources }}
+                    REPORT: ${{ runner.temp }}/psalm-taint.md
+                    SARIF: ${{ runner.temp }}/psalm-taint.sarif
+                run: |
+                    composer config minimum-stability dev
+                    composer config prefer-stable true
+                    .workflows-collection/security/psalm-taint.sh || {
+                        code=$?
+                        [ "$code" -eq 1 ] && [ "$PRIVATE" = false ] || exit "$code"
+                    }
+
+            # Anyone can read the runs of a public repository. Its findings stay in code scanning.
+            -   name: Write report
+                if: always()
+                env:
+                    REPORT: ${{ runner.temp }}/psalm-taint.md
+                    SARIF: ${{ runner.temp }}/psalm-taint.sarif
+                run: |
+                    if [ "$PRIVATE" = true ] || [ ! -f "$SARIF" ]; then
+                        [ -f "$REPORT" ] && cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+                    else
+                        echo "$(jq '[.runs[].results[]] | length' "$SARIF") taint findings. Code scanning lists them." >> "$GITHUB_STEP_SUMMARY"
+                    fi
+
+            -   name: Keep findings
+                if: always() && env.PRIVATE == 'true'
+                uses: actions/upload-artifact@v7
+                with:
+                    name: psalm-taint
+                    path: ${{ runner.temp }}/psalm-taint.sarif
+                    if-no-files-found: ignore
+
+            -   name: Upload findings to code scanning
+                if: env.CAN_UPLOAD == 'true'
+                uses: github/codeql-action/upload-sarif@v4
+                with:
+                    sarif_file: ${{ runner.temp }}/psalm-taint.sarif
+                    category: psalm
