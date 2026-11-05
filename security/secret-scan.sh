@@ -26,7 +26,7 @@ report() {
 # For a range git cannot resolve, gitleaks reports no finding instead of an error.
 if [ -n "${RANGE:-}" ]; then
     read -ra range <<< "$RANGE"
-    git rev-list "${range[@]}" > /dev/null 2> "$log" || { report "Secret scan could not run"; exit 2; }
+    git rev-list "${range[@]}" > /dev/null 2> "$log" || { report "Secret scan could not run"; cat "$REPORT"; exit 2; }
 fi
 
 # gitleaks exits with 1 on an error. Exit code 3 marks findings.
@@ -36,5 +36,5 @@ docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --lo
 case $? in
     0) echo "No secrets found." > "$REPORT" ;;
     3) report "Secrets found" "Revoke each secret with its provider. Removing it from the code is not enough."; exit 1 ;;
-    *) report "Secret scan could not run"; exit 2 ;;
+    *) report "Secret scan could not run"; cat "$REPORT"; exit 2 ;;
 esac

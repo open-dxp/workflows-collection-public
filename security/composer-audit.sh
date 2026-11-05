@@ -21,6 +21,7 @@ fail() {
         cat "$log"
         echo '```'
     } > "$REPORT"
+    cat "$REPORT"
     exit 2
 }
 

@@ -23,6 +23,7 @@ fail() {
         tail -n 50 "$log"
         echo '```'
     } > "$REPORT"
+    cat "$REPORT"
     exit 2
 }
 
