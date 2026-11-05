@@ -45,7 +45,7 @@ fi
 COMPOSER_NO_SECURITY_BLOCKING=1 composer "$install" --no-interaction --no-progress --no-scripts --no-plugins --ignore-platform-reqs > "$log" 2>&1 || fail
 
 # Composer exits with 1 for an advisory and for an error. Only a valid JSON report means the audit ran.
-composer audit --format=json --abandoned=report > "$audit" 2> "$log"
+composer audit --no-plugins --format=json --abandoned=report > "$audit" 2> "$log"
 jq -e 'has("advisories")' "$audit" > /dev/null 2>&1 || fail
 
 count=$(jq '[.advisories[]?[]?] | length' "$audit")
