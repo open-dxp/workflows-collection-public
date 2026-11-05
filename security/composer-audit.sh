@@ -42,7 +42,7 @@ fi
 # A project is audited as its lock file installs it. A package without one as a fresh install resolves it.
 # Without COMPOSER_NO_SECURITY_BLOCKING, Composer skips versions with a known advisory and the audit never sees them.
 [ -f composer.lock ] && install=install || install=update
-COMPOSER_NO_SECURITY_BLOCKING=1 composer "$install" --no-interaction --no-progress --no-scripts --ignore-platform-reqs > "$log" 2>&1 || fail
+COMPOSER_NO_SECURITY_BLOCKING=1 composer "$install" --no-interaction --no-progress --no-scripts --no-plugins --ignore-platform-reqs > "$log" 2>&1 || fail
 
 # Composer exits with 1 for an advisory and for an error. Only a valid JSON report means the audit ran.
 composer audit --format=json --abandoned=report > "$audit" 2> "$log"
