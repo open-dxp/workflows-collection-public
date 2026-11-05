@@ -331,7 +331,7 @@ jobs:
                     vendor/bin/codecept run -c . --xml $EXTRA_ARGS
 
             -   name: Log Output
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 if: failure()
                 with:
                     name: "Logs (PHP ${{ inputs.php_version }})"
