@@ -35,7 +35,8 @@ if [ "$(jq -r .name composer.json)" != open-dxp/opendxp ]; then
     packages+=('open-dxp/psalm-plugin:^1.0')
 fi
 
-composer require --dev --with-all-dependencies --no-interaction --no-progress --no-scripts --no-plugins --ignore-platform-reqs \
+# Advisories are the job of the audit. The analysis also runs over a dependency that has one.
+COMPOSER_NO_SECURITY_BLOCKING=1 composer require --dev --with-all-dependencies --no-interaction --no-progress --no-scripts --no-plugins --ignore-platform-reqs \
     "${packages[@]}" > "$log" 2>&1 || fail
 
 directories=
