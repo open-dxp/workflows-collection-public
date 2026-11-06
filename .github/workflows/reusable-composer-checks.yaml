@@ -1,3 +1,4 @@
+# Deprecated. Use reusable-composer-vulnerabilities.yaml instead.
 name: Reusable Composer Audit & Outdated
 
 on:

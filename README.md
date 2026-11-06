@@ -13,7 +13,6 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 | `reusable-pest-tests.yaml`               | runs a package's Pest suite in an OpenDXP application built for it              |
 | `reusable-static-analysis.yaml`          | runs phpstan over a package, against the same application                       |
 | `reusable-php-cs-fixer.yaml`             | runs php-cs-fixer and commits the fixes                                         |
-| `reusable-composer-checks.yaml`          | runs `composer audit` and `composer outdated`                                   |
 | `reusable-changelog.yaml`                | checks the `CHANGELOG.md` of a pull request: an entry and its form              |
 | `reusable-composer-vulnerabilities.yaml` | checks the installed packages against the advisory database                     |
 | `reusable-taint-analysis.yaml`           | follows input from a request into SQL, HTML, files and other sinks, with Psalm  |
@@ -361,4 +360,5 @@ Do not use these for a new package.
 | `reusable-codeception-tests-centralized.yaml` | `reusable-pest-tests.yaml`      |
 | `reusable-static-analysis-centralized.yaml`   | `reusable-static-analysis.yaml` |
 | `reusable-security-analysis.yaml`             | `reusable-taint-analysis.yaml`  |
+| `reusable-composer-checks.yaml`               | `reusable-composer-vulnerabilities.yaml` |
 | `codeception-tests-configuration/`            | `tests-configuration/`          |
