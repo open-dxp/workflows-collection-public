@@ -78,8 +78,9 @@ findings='[.[] | select(.type | startswith("Tainted"))]'
 count=$(jq "$findings | length" "$issues")
 
 # SARIF refers to a rule by number. The rule list gives the issue type.
+# Psalm keeps a finding of the baseline in the SARIF report as a note. Code scanning would list it.
 jq '.runs[] |= ([.tool.driver.rules[] | select(.name | startswith("Tainted")) | .id] as $taint
-    | .results |= map(select(.ruleId as $id | $taint | index($id))))' "$SARIF" > "$SARIF.tmp" && mv "$SARIF.tmp" "$SARIF"
+    | .results |= map(select((.ruleId as $id | $taint | index($id)) and .level != "note")))' "$SARIF" > "$SARIF.tmp" && mv "$SARIF.tmp" "$SARIF"
 
 {
     if [ "$count" -eq 0 ]; then
