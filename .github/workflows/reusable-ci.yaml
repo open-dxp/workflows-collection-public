@@ -1,0 +1,165 @@
+name: CI
+
+on:
+    workflow_call:
+        inputs:
+            composer_repository:
+                description: A composer repository to offer besides packagist, as a url.
+                required: false
+                type: string
+                default: ''
+            enable_browser:
+                required: false
+                type: boolean
+                default: false
+            enable_opensearch_service:
+                required: false
+                type: boolean
+                default: false
+            enable_redis_service:
+                required: false
+                type: boolean
+                default: false
+            install_ffmpeg:
+                required: false
+                type: boolean
+                default: false
+            install_ghostscript_and_pdfinfo:
+                required: false
+                type: boolean
+                default: false
+            taint_sources:
+                description: The directories of the taint analysis, separated by spaces.
+                required: false
+                type: string
+                default: 'src'
+
+concurrency:
+    group: ci-${{ github.repository }}-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+
+jobs:
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            code: ${{ steps.diff.outputs.code }}
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    fetch-depth: 0
+
+            # A pull request that changes docs only skips the tests.
+            # The workflow itself still runs, because the required check must report in every pull request.
+            -   id: diff
+                env:
+                    BASE: ${{ github.event.pull_request.base.sha }}
+                    HEAD: ${{ github.event.pull_request.head.sha }}
+                run: |
+                    if git diff --name-only "$BASE...$HEAD" | grep -qvE '\.md$|^docs?/'; then
+                        echo "code=true" >> "$GITHUB_OUTPUT"
+                    else
+                        echo "code=false" >> "$GITHUB_OUTPUT"
+                    fi
+
+    setup-tests-matrix:
+        needs: changes
+        if: needs.changes.outputs.code == 'true'
+        runs-on: ubuntu-latest
+        outputs:
+            matrix: ${{ steps.matrix.outputs.matrix }}
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   id: matrix
+                uses: open-dxp/workflows-collection-public/.github/actions/test-matrix@main
+                with:
+                    configuration: tests-configuration
+
+    pest-tests:
+        needs: setup-tests-matrix
+        strategy:
+            matrix: ${{ fromJson(needs.setup-tests-matrix.outputs.matrix) }}
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-pest-tests.yaml@main
+        with:
+            composer_repository: ${{ inputs.composer_repository }}
+            enable_browser: ${{ inputs.enable_browser }}
+            enable_opensearch_service: ${{ inputs.enable_opensearch_service }}
+            enable_redis_service: ${{ inputs.enable_redis_service }}
+            install_ffmpeg: ${{ inputs.install_ffmpeg }}
+            install_ghostscript_and_pdfinfo: ${{ inputs.install_ghostscript_and_pdfinfo }}
+            php_version: ${{ matrix.matrix.php-version }}
+            database: ${{ matrix.matrix.database }}
+            server_version: ${{ matrix.matrix.server_version }}
+            dependencies: ${{ matrix.matrix.dependencies }}
+            experimental: ${{ matrix.matrix.experimental }}
+            opendxp_version: ${{ matrix.matrix.opendxp_version }}
+        secrets: inherit
+
+    setup-static-analysis-matrix:
+        needs: changes
+        if: needs.changes.outputs.code == 'true'
+        runs-on: ubuntu-latest
+        outputs:
+            matrix: ${{ steps.matrix.outputs.matrix }}
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   id: matrix
+                uses: open-dxp/workflows-collection-public/.github/actions/test-matrix@main
+                with:
+                    configuration: phpstan-configuration
+
+    static-analysis:
+        needs: setup-static-analysis-matrix
+        strategy:
+            matrix: ${{ fromJson(needs.setup-static-analysis-matrix.outputs.matrix) }}
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-static-analysis.yaml@main
+        with:
+            composer_repository: ${{ inputs.composer_repository }}
+            php_version: ${{ matrix.matrix.php-version }}
+            experimental: ${{ matrix.matrix.experimental }}
+            opendxp_version: ${{ matrix.matrix.opendxp_version }}
+        secrets: inherit
+
+    composer-vulnerabilities:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-composer-vulnerabilities.yaml@main
+        with:
+            composer_repository: ${{ inputs.composer_repository }}
+        secrets: inherit
+
+    taint-analysis:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-taint-analysis.yaml@main
+        with:
+            sources: ${{ inputs.taint_sources }}
+            composer_repository: ${{ inputs.composer_repository }}
+        permissions:
+            contents: read
+            security-events: write
+        secrets: inherit
+
+    secret-scan:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-secret-scan.yaml@main
+
+    # The CI ruleset of the organisation requires this check. It fails when any job above fails or is cancelled.
+    ci-passed:
+        if: always()
+        needs:
+            - changes
+            - setup-tests-matrix
+            - pest-tests
+            - setup-static-analysis-matrix
+            - static-analysis
+            - composer-vulnerabilities
+            - taint-analysis
+            - secret-scan
+        runs-on: ubuntu-latest
+        steps:
+            -   env:
+                    RESULTS: ${{ join(needs.*.result, ' ') }}
+                run: |
+                    for result in $RESULTS; do
+                        if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+                            echo "A job ended with the result $result." >&2
+                            exit 1
+                        fi
+                    done

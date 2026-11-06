@@ -9,6 +9,7 @@ Everything here is called with `uses:`. Nothing runs on this repository itself.
 
 | Workflow                                 |                                                                                 |
 |------------------------------------------|---------------------------------------------------------------------------------|
+| `reusable-ci.yaml`                       | runs the tests, the analysis and the security checks of a pull request          |
 | `reusable-pest-tests.yaml`               | runs a package's Pest suite in an OpenDXP application built for it              |
 | `reusable-static-analysis.yaml`          | runs phpstan over a package, against the same application                       |
 | `reusable-php-cs-fixer.yaml`             | runs php-cs-fixer and commits the fixes                                         |
@@ -52,6 +53,47 @@ The Pest and the analysis workflow both build it through `build-opendxp-applicat
 Nothing of this lives in your repository.
 You do not keep a `bin/console`, a `config/` or a `public/index.php` for the sake of CI.
 
+## Pull requests
+
+`.github/workflows/ci.yaml` in your package:
+
+```yaml
+name: CI
+
+on:
+    pull_request:
+        types: [ opened, synchronize, reopened ]
+
+jobs:
+    ci:
+        uses: open-dxp/workflows-collection-public/.github/workflows/reusable-ci.yaml@main
+        with:
+            composer_repository: 'https://my-registry.com'
+        secrets: inherit
+```
+
+`reusable-ci.yaml` runs the Pest tests, the static analysis and the security checks below. Its last job,
+`ci / ci-passed`, fails when one of them fails. The CI ruleset of the organisation requires this check
+in every repository whose property `ci-gate` is `true`.
+
+A pull request that changes only `.md` files or files in `doc/` or `docs/` skips the tests and the
+analysis. A new push to a pull request cancels the run that is still going.
+
+Options of `reusable-ci.yaml`. Each one is handed to the workflow of the same name below.
+
+|                                   |                                                    |
+|-----------------------------------|----------------------------------------------------|
+| `composer_repository`             | a composer repository besides packagist, as a url  |
+| `enable_browser`                  | see `reusable-pest-tests.yaml`                     |
+| `enable_redis_service`            | see `reusable-pest-tests.yaml`                     |
+| `enable_opensearch_service`       | see `reusable-pest-tests.yaml`                     |
+| `install_ghostscript_and_pdfinfo` | see `reusable-pest-tests.yaml`                     |
+| `install_ffmpeg`                  | see `reusable-pest-tests.yaml`                     |
+| `taint_sources`                   | `sources` of `reusable-taint-analysis.yaml`        |
+
+The workflows `pest.yaml`, `static-analysis.yaml` and `security.yaml` of a package run on a push and on
+a schedule. They have no `pull_request` trigger, so a pull request does not run them twice.
+
 ## Running the tests
 
 `.github/workflows/pest.yaml` in your package:
@@ -65,8 +107,6 @@ on:
         branches:
             - "[0-9]+.[0-9]+"
             - "[0-9]+.x"
-    pull_request:
-        types: [ opened, synchronize, reopened ]
 
 jobs:
     setup-matrix:
@@ -214,8 +254,6 @@ on:
         branches:
             - "[0-9]+.[0-9]+"
             - "[0-9]+.x"
-    pull_request:
-        types: [ opened, synchronize, reopened ]
 
 jobs:
     composer-vulnerabilities:
