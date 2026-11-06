@@ -53,7 +53,7 @@ The Pest and the analysis workflow both build it through `build-opendxp-applicat
 Nothing of this lives in your repository.
 You do not keep a `bin/console`, a `config/` or a `public/index.php` for the sake of CI.
 
-## Pull requests
+## CI of a package
 
 `.github/workflows/ci.yaml` in your package:
 
@@ -61,6 +61,13 @@ You do not keep a `bin/console`, a `config/` or a `public/index.php` for the sak
 name: CI
 
 on:
+    workflow_dispatch:
+    schedule:
+        -   cron: '0 5 * * *'
+    push:
+        branches:
+            - "[0-9]+.[0-9]+"
+            - "[0-9]+.x"
     pull_request:
         types: [ opened, synchronize, reopened ]
 
@@ -72,14 +79,23 @@ jobs:
         secrets: inherit
 ```
 
-`reusable-ci.yaml` runs the Pest tests, the static analysis and the security checks below. Its last job,
-`ci / ci-passed`, fails when one of them fails. The CI ruleset of the organisation requires this check
-in every repository whose property `ci-gate` is `true`.
+`reusable-ci.yaml` calls the workflows below. Which ones run depends on the event:
 
-A pull request that changes only `.md` files or files in `doc/` or `docs/` skips the tests and the
-analysis. A new push to a pull request cancels the run that is still going.
+| Event                        | Pest tests | Static analysis | Security checks |
+|------------------------------|------------|-----------------|-----------------|
+| pull request                 | yes        | yes             | yes             |
+| push to a version branch     | no         | no              | yes             |
+| schedule                     | no         | Mondays only    | yes             |
+| run by hand                  | yes        | yes             | yes             |
 
-Options of `reusable-ci.yaml`. Each one is handed to the workflow of the same name below.
+A pull request has run the tests on the code before its merge, so a push does not run them again. A
+pull request that changes only `.md` files or files in `doc/` or `docs/` skips the tests and the
+analysis. A new run cancels the run of the same pull request or branch that is still going.
+
+The last job, `ci / ci-passed`, fails when one of the others fails. The CI ruleset of the organisation
+requires this check in every repository whose property `ci-gate` is `true`.
+
+Options of `reusable-ci.yaml`. Each one is handed to the workflow of the same name.
 
 |                                   |                                                    |
 |-----------------------------------|----------------------------------------------------|
@@ -91,12 +107,9 @@ Options of `reusable-ci.yaml`. Each one is handed to the workflow of the same na
 | `install_ffmpeg`                  | see `reusable-pest-tests.yaml`                     |
 | `taint_sources`                   | `sources` of `reusable-taint-analysis.yaml`        |
 
-The workflows `pest.yaml`, `static-analysis.yaml` and `security.yaml` of a package run on a push and on
-a schedule. They have no `pull_request` trigger, so a pull request does not run them twice.
-
 ## Running the tests
 
-`.github/workflows/pest.yaml` in your package:
+`reusable-ci.yaml` runs the tests. A package can also call them in a workflow of its own:
 
 ```yaml
 name: Pest tests
@@ -243,7 +256,7 @@ Four workflows check a package for known vulnerabilities, unsafe input and leake
 lives in the scripts in `security/`. A workflow only runs a script and shows its report in the summary
 of the job.
 
-`.github/workflows/security.yaml` in your package:
+`reusable-ci.yaml` runs them. A package can also call them in a workflow of its own:
 
 ```yaml
 name: Security
