@@ -12,6 +12,7 @@ const ANNOUNCEMENT = /^ {2}> (.+)$/;
 const STEP = /^ {2}(\d+)\. (.+)$/;
 const CONTINUATION = /^ {2}(?![-*+] |> |\d+\. )(\S.*)$/;
 const TAG = /^\[([A-Z][A-Z /-]*)\] */;
+const ADVISORY = /^\[(OPENDXP-SA-\d{4}-\d{3})\] */;
 
 /**
  * Reads a CHANGELOG.md. Every line that does not follow the grammar is reported with its number, and an entry
@@ -21,7 +22,7 @@ const TAG = /^\[([A-Z][A-Z /-]*)\] */;
  * @returns {{versions: Version[], errors: {line: number, message: string}[]}}
  *
  * @typedef {{version: string, line: number, entries: Entry[]}} Version
- * @typedef {{type: string, markers: string[], text: string, announcement: string | null, steps: string[], line: number}} Entry
+ * @typedef {{type: string, markers: string[], advisories: string[], text: string, announcement: string | null, steps: string[], line: number}} Entry
  */
 export function parseChangelog(text) {
 
@@ -161,8 +162,16 @@ function readEntry(content, line, fail) {
         rest = rest.slice(tag[0].length);
     }
 
+    // A fixed vulnerability names its advisory after the type and the markers.
+    const advisories = [];
+
+    while ((tag = rest.match(ADVISORY)) !== null) {
+        advisories.push(tag[1]);
+        rest = rest.slice(tag[0].length);
+    }
+
     const [type, ...markers] = tags;
-    const entry = {type, markers, text: rest.trim(), announcement: [], steps: [], line, valid: true};
+    const entry = {type, markers, advisories, text: rest.trim(), announcement: [], steps: [], line, valid: true};
 
     if (!TYPES.includes(type)) {
         fail(line, type === undefined
@@ -180,6 +189,16 @@ function readEntry(content, line, fail) {
 
     if (new Set(markers).size !== markers.length) {
         fail(line, 'A marker appears only once per entry.');
+        entry.valid = false;
+    }
+
+    if (rest.startsWith('[OPENDXP-SA')) {
+        fail(line, 'An advisory is named as [OPENDXP-SA-YYYY-NNN], with four digits for the year and three for the number.');
+        entry.valid = false;
+    }
+
+    if (advisories.length > 0 && type !== 'SECURITY') {
+        fail(line, 'Only a [SECURITY] entry names an advisory.');
         entry.valid = false;
     }
 
@@ -219,8 +238,8 @@ function checkEntry(entry, fail) {
     return entry.valid;
 }
 
-function toEntry({type, markers, text, announcement, steps, line}) {
-    return {type, markers, text, announcement: announcement.length > 0 ? announcement.join(' ') : null, steps, line};
+function toEntry({type, markers, advisories, text, announcement, steps, line}) {
+    return {type, markers, advisories, text, announcement: announcement.length > 0 ? announcement.join(' ') : null, steps, line};
 }
 
 function checkOrder(previous, current, fail) {
