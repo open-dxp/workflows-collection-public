@@ -355,10 +355,10 @@ What that key is for is in [open-dxp/test-foundation](https://github.com/open-dx
 
 Do not use these for a new package.
 
-|                                               | Use instead                     |
-|-----------------------------------------------|---------------------------------|
-| `reusable-codeception-tests-centralized.yaml` | `reusable-pest-tests.yaml`      |
-| `reusable-static-analysis-centralized.yaml`   | `reusable-static-analysis.yaml` |
-| `reusable-security-analysis.yaml`             | `reusable-taint-analysis.yaml`  |
+|                                               | Use instead                              |
+|-----------------------------------------------|------------------------------------------|
+| `reusable-codeception-tests-centralized.yaml` | `reusable-pest-tests.yaml`               |
+| `reusable-static-analysis-centralized.yaml`   | `reusable-static-analysis.yaml`          |
+| `reusable-security-analysis.yaml`             | `reusable-taint-analysis.yaml`           |
 | `reusable-composer-checks.yaml`               | `reusable-composer-vulnerabilities.yaml` |
-| `codeception-tests-configuration/`            | `tests-configuration/`          |
+| `codeception-tests-configuration/`            | `tests-configuration/`                   |
