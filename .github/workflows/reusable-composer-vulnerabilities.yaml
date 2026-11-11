@@ -78,13 +78,24 @@ jobs:
                     key: composer-${{ inputs.php-version }}-${{ hashFiles('composer.json') }}
                     restore-keys: composer-${{ inputs.php-version }}-
 
+            # Composer cannot read the version of a pull request checkout. A version branch names it. A pull request
+            # in a stack targets another pull request, so the default branch names it then. Without a version branch,
+            # Composer reads the version itself.
+            -   name: Name the version of the checkout
+                env:
+                    BRANCH: ${{ github.base_ref || github.ref_name }}
+                    DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+                run: |
+                    [[ $BRANCH =~ ^[0-9]+\.([0-9]+|x)$ ]] || BRANCH=$DEFAULT_BRANCH
+                    if [[ $BRANCH =~ ^[0-9]+\.([0-9]+|x)$ ]]; then
+                        echo "COMPOSER_ROOT_VERSION=$BRANCH-dev" >> "$GITHUB_ENV"
+                    fi
+
             -   name: Check for security vulnerabilities
                 if: env.SKIP != 'true'
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                     COMPOSER_REPOSITORY: ${{ inputs.composer_repository }}
-                    # A package that core requires, such as admin-bundle, needs the version of its branch to resolve.
-                    COMPOSER_ROOT_VERSION: ${{ github.event_name == 'pull_request' && format('{0}-dev', github.base_ref) || '' }}
                     IGNORE_LIST: ${{ inputs.ignore-list }}
                     REPORT: ${{ runner.temp }}/composer-audit.md
                 run: .workflows-collection/security/composer-audit.sh
