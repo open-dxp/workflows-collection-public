@@ -83,6 +83,8 @@ jobs:
                 env:
                     COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
                     COMPOSER_REPOSITORY: ${{ inputs.composer_repository }}
+                    # A package that core requires, such as admin-bundle, needs the version of its branch to resolve.
+                    COMPOSER_ROOT_VERSION: ${{ github.event_name == 'pull_request' && format('{0}-dev', github.base_ref) || '' }}
                     IGNORE_LIST: ${{ inputs.ignore-list }}
                     REPORT: ${{ runner.temp }}/composer-audit.md
                 run: .workflows-collection/security/composer-audit.sh
