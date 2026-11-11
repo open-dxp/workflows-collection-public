@@ -71,14 +71,17 @@ jobs:
                     restore-keys: composer-${{ inputs.php_version }}-
 
             # Composer cannot read the version of a pull request checkout. A version branch names it. A pull request
-            # in a stack targets another pull request, so the default branch names it then.
+            # in a stack targets another pull request, so the default branch names it then. Without a version branch,
+            # Composer reads the version itself.
             -   name: Name the version of the checkout
                 env:
                     BRANCH: ${{ github.base_ref || github.ref_name }}
                     DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
                 run: |
                     [[ $BRANCH =~ ^[0-9]+\.([0-9]+|x)$ ]] || BRANCH=$DEFAULT_BRANCH
-                    echo "COMPOSER_ROOT_VERSION=$BRANCH-dev" >> "$GITHUB_ENV"
+                    if [[ $BRANCH =~ ^[0-9]+\.([0-9]+|x)$ ]]; then
+                        echo "COMPOSER_ROOT_VERSION=$BRANCH-dev" >> "$GITHUB_ENV"
+                    fi
 
             # The test application allows the development branches of the OpenDXP packages. The analysis does too.
             -   name: Run taint analysis
