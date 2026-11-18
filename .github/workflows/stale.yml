@@ -10,7 +10,7 @@ jobs:
   stale:
     permissions:
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
     steps:
       - uses: actions/stale@v11
         with:

@@ -40,7 +40,7 @@ concurrency:
 
 jobs:
     plan:
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         outputs:
             tests: ${{ steps.plan.outputs.tests }}
             static_analysis: ${{ steps.plan.outputs.static_analysis }}
@@ -87,7 +87,7 @@ jobs:
     setup-tests-matrix:
         needs: plan
         if: needs.plan.outputs.tests == 'true'
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         outputs:
             matrix: ${{ steps.matrix.outputs.matrix }}
         steps:
@@ -121,7 +121,7 @@ jobs:
     setup-static-analysis-matrix:
         needs: plan
         if: needs.plan.outputs.static_analysis == 'true'
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         outputs:
             matrix: ${{ steps.matrix.outputs.matrix }}
         steps:
@@ -176,7 +176,7 @@ jobs:
             - composer-vulnerabilities
             - taint-analysis
             - secret-scan
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         steps:
             -   env:
                     RESULTS: ${{ join(needs.*.result, ' ') }}
