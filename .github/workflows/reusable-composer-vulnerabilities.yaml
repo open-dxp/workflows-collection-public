@@ -33,7 +33,7 @@ permissions:
 jobs:
     composer-checks:
         name: Composer Checks
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         env:
             TEAMS_URI: ${{ secrets.TEAMS_COMPOSER_VULNERABILITY_URI }}
         steps:

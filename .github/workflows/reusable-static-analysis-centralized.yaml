@@ -79,7 +79,7 @@ on:
 jobs:
     static-analysis:
         name: Static analysis with phpstan
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         continue-on-error: ${{ inputs.experimental == true }}
         concurrency:
             group: static-analysis-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}

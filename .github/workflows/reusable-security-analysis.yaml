@@ -21,7 +21,7 @@ on:
 jobs:
     security-analysis:
         name: Security analysis
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         timeout-minutes: 20
         permissions:
             contents: read

@@ -6,7 +6,7 @@ on:
 jobs:
     changelog:
         name: Changelog
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
 
         steps:
             -   uses: actions/checkout@v7

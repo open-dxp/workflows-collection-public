@@ -49,7 +49,7 @@ jobs:
     php-cs-fixer:
         permissions:
             contents: write # allow stefanzweifel/git-auto-commit-action to push code in repo
-        runs-on: ubuntu-latest
+        runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
         steps:
             -   name: Setup PHP
                 uses: shivammathur/setup-php@v2
