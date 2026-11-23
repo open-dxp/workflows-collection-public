@@ -76,7 +76,6 @@ runs:
                     composer config repositories.private composer '${{ inputs.composer_repository }}'
                 fi
 
-                # The fork comes before packagist, so composer takes open-dxp/opendxp only from there.
                 if [ -n '${{ inputs.opendxp_repository }}' ]; then
                     composer config repositories.opendxp vcs '${{ inputs.opendxp_repository }}'
                 fi
