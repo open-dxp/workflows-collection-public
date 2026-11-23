@@ -21,6 +21,10 @@ on:
             opendxp_version:
                 required: false
                 type: string
+            opendxp_repository:
+                description: A fork of open-dxp/opendxp to install the core from, as a git url.
+                required: false
+                type: string
             composer_repository:
                 description: A composer repository to offer besides packagist, as a url.
                 required: false
@@ -126,6 +130,7 @@ jobs:
                     # Outside the checkout, because composer refuses to link a package into a directory inside itself.
                     application: ${{ runner.temp }}/application
                     opendxp_version: ${{ inputs.opendxp_version }}
+                    opendxp_repository: ${{ inputs.opendxp_repository }}
                     composer_repository: ${{ inputs.composer_repository }}
 
             -   name: Locate the package
