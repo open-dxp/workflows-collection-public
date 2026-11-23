@@ -104,6 +104,8 @@ Options of `reusable-ci.yaml`. Each one is handed to the workflow of the same na
 | `enable_opensearch_service`       | see `reusable-pest-tests.yaml`                     |
 | `install_ghostscript_and_pdfinfo` | see `reusable-pest-tests.yaml`                     |
 | `install_ffmpeg`                  | see `reusable-pest-tests.yaml`                     |
+| `opendxp_repository`              | see [The core from a fork](#the-core-from-a-fork)  |
+| `opendxp_version`                 | see [The core from a fork](#the-core-from-a-fork)  |
 | `taint_sources`                   | `sources` of `reusable-taint-analysis.yaml`        |
 
 ## Running the tests
@@ -205,6 +207,7 @@ looks like a suite that passed.
 | `server_version`               | the server version doctrine is configured with, matches the image, required by `reusable-pest-tests.yaml` |
 | `experimental`                 | a failure does not fail the run                                                                           |
 | `opendxp_version`              | a version of `open-dxp/opendxp` to force                                                                  |
+| `opendxp_repository`           | a fork of `open-dxp/opendxp` to install the core from, as a git url                                       |
 | `composer_repository`          | a composer repository besides packagist, as a url                                                         |
 | `execute_post_checkout_action` | run `.github/actions/post-checkout-action` of your package                                                |
 
@@ -345,6 +348,20 @@ with:
 ```
 
 Credentials for it go in `COMPOSER_AUTH`, as a secret.
+
+## The core from a fork
+
+A package that is developed against a fork of the core names the fork and its branch:
+
+```yaml
+with:
+    opendxp_repository: 'https://github.com/my-org/opendxp'
+    opendxp_version: 'dev-my-branch as 1.99.9'
+```
+
+The tests and the analysis then install `open-dxp/opendxp` only from the fork.
+`opendxp_version` replaces the version of the matrix in every run. The alias lets the packages that
+require `^1` accept the branch. A private fork needs a GitHub token in `COMPOSER_AUTH`.
 
 ## Packages the tests need but the package must not require
 

@@ -28,6 +28,16 @@ on:
                 required: false
                 type: boolean
                 default: false
+            opendxp_repository:
+                description: A fork of open-dxp/opendxp to install the core from, as a git url.
+                required: false
+                type: string
+                default: ''
+            opendxp_version:
+                description: A version of open-dxp/opendxp to force in every run, instead of the one of the matrix.
+                required: false
+                type: string
+                default: ''
             taint_sources:
                 description: The directories of the taint analysis, separated by spaces.
                 required: false
@@ -115,7 +125,8 @@ jobs:
             server_version: ${{ matrix.matrix.server_version }}
             dependencies: ${{ matrix.matrix.dependencies }}
             experimental: ${{ matrix.matrix.experimental }}
-            opendxp_version: ${{ matrix.matrix.opendxp_version }}
+            opendxp_repository: ${{ inputs.opendxp_repository }}
+            opendxp_version: ${{ inputs.opendxp_version || matrix.matrix.opendxp_version }}
         secrets: inherit
 
     setup-static-analysis-matrix:
@@ -141,7 +152,8 @@ jobs:
             composer_repository: ${{ inputs.composer_repository }}
             php_version: ${{ matrix.matrix.php-version }}
             experimental: ${{ matrix.matrix.experimental }}
-            opendxp_version: ${{ matrix.matrix.opendxp_version }}
+            opendxp_repository: ${{ inputs.opendxp_repository }}
+            opendxp_version: ${{ inputs.opendxp_version || matrix.matrix.opendxp_version }}
         secrets: inherit
 
     composer-vulnerabilities:
