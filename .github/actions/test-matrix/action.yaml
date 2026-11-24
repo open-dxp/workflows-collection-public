@@ -9,6 +9,10 @@ inputs:
         description: The composer.json to read the supported php versions from.
         required: false
         default: composer.json
+    opendxp_version:
+        description: A version of open-dxp/opendxp that every run uses. Runs that name a version of their own are left out.
+        required: false
+        default: ''
 
 outputs:
     matrix:
@@ -40,8 +44,9 @@ runs:
                     exit 1
                 fi
 
-                matrix=$(jq -c --arg versions "$versions" \
-                    '{matrix: [.configs[] | select(.php_version == $versions) | .matrix[]]}' \
+                matrix=$(jq -c --arg versions "$versions" --arg opendxp '${{ inputs.opendxp_version }}' \
+                    '{matrix: [.configs[] | select(.php_version == $versions) | .matrix[]
+                        | select($opendxp == "" or .opendxp_version == null)]}' \
                     "$configuration")
 
                 # An empty matrix runs nothing and reports success, which reads like a green suite.
