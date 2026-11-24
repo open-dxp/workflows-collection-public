@@ -107,6 +107,7 @@ jobs:
                 uses: open-dxp/workflows-collection-public/.github/actions/test-matrix@main
                 with:
                     configuration: tests-configuration
+                    opendxp_version: ${{ inputs.opendxp_version }}
 
     pest-tests:
         needs: setup-tests-matrix
@@ -142,6 +143,7 @@ jobs:
                 uses: open-dxp/workflows-collection-public/.github/actions/test-matrix@main
                 with:
                     configuration: phpstan-configuration
+                    opendxp_version: ${{ inputs.opendxp_version }}
 
     static-analysis:
         needs: setup-static-analysis-matrix

@@ -360,7 +360,8 @@ with:
 ```
 
 The tests and the analysis then install `open-dxp/opendxp` only from the fork.
-`opendxp_version` replaces the version of the matrix in every run. The alias lets the packages that
+`opendxp_version` replaces the version of the matrix in every run. A run of the matrix that names a
+version of its own would repeat another run, so it is left out. The alias lets the packages that
 require `^1` accept the branch. A private fork needs a GitHub token in `COMPOSER_AUTH`.
 
 ## Packages the tests need but the package must not require
