@@ -158,6 +158,12 @@ jobs:
                     ini-values: display_errors=On, display_startup_errors=On, error_reporting=32767
                     php-version: ${{ inputs.php_version }}
 
+            -   name: Update the package lists
+                if: inputs.install_ghostscript_and_pdfinfo || inputs.install_ffmpeg || inputs.enable_browser
+                # cache-apt-pkgs-action installs from the package lists of the runner image.
+                # Ubuntu deletes a package version from its mirror once an update replaces it.
+                run: sudo apt-get update
+
             -   name: Install Ghostscript and PDFInfo
                 if: inputs.install_ghostscript_and_pdfinfo
                 uses: awalsh128/cache-apt-pkgs-action@v1
