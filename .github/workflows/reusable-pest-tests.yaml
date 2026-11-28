@@ -87,7 +87,7 @@ jobs:
     pest-tests:
         name: Pest tests
         runs-on: ${{ vars.USE_DD_DELTA_RUNNER == 'true' && 'dd-delta' || 'ubuntu-latest' }}
-        timeout-minutes: 20
+        timeout-minutes: 30
         continue-on-error: ${{ inputs.experimental == true }}
         concurrency:
             group: pest-${{ github.workflow }}-${{ github.ref }}-${{ inputs.php_version }}-${{ inputs.database }}-${{ inputs.dependencies }}-${{ inputs.opendxp_version }}
